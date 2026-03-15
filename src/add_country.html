@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar País</title>
+</head>
+<body>
+    <center>
+        <h2>Registrar nuevo país</h2>
+        <form name="country-form" action="save_country.php" method="post">
+            <table border="0">
+                <tr>
+                    <td><input type="text" name="name" placeholder="Nombre del país" required></td>
+                </tr>
+                <tr>
+                    <td><input type="text" name="abbrev" placeholder="Abreviatura (ej: COL)"></td>
+                </tr>
+                <tr>
+                    <td><input type="text" name="code" placeholder="Código (ej: 57)"></td>
+                </tr>
+                <tr>
+                    <td align="center"><button>Guardar</button></td>
+                </tr>
+            </table>
+        </form>
+    </center>
+</body>
+</html>
