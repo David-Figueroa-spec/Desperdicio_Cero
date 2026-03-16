@@ -1,21 +1,257 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Market - Register </title>
-        <link rel="icon" type="image/png"href="icon/market_main" >
-    </head>
-    <body>
-        <br>
-       <center><img src="images/user_default.png"width="8%"></center>
-       <form name="login-form" action="signin.php" method="post">
-       <table boder="0" align="center">
-            <tr><td><input type="email" name="email" placeholder="joe@gmail.com" required></td></tr>
-            <tr><td><input type="password" name="passwd" placeholder="*************" required></td></tr>
-            <tr><td align="center"><button>login</button></td></tr>
 
-       </table>
-       </form>  
-    </body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misión Desperdicio Cero - Login</title>
+    <link rel="icon" type="image/png" href="icon/market_main.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            background: #0a1a0f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(80px);
+        }
+        .orb-1 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(74,222,128,0.12) 0%, transparent 70%);
+            top: -80px; left: -100px;
+        }
+        .orb-2 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(251,146,60,0.10) 0%, transparent 70%);
+            bottom: -60px; right: -60px;
+        }
+
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(74,222,128,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(74,222,128,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* Tarjeta */
+        .login-card {
+            position: relative;
+            z-index: 2;
+            background: rgba(15, 30, 18, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(74,222,128,0.12);
+            padding: 40px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            margin: 1rem;
+            animation: fadeUp 0.7s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #4ade80;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            margin-bottom: 28px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .back-link:hover { opacity: 1; }
+
+        /* Logo */
+        .logo-wrap {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+        }
+
+        /* Títulos */
+        h2 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: #f0fdf4;
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 300;
+            margin-bottom: 32px;
+        }
+
+        /* Formulario */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #4ade80;
+            margin-bottom: 8px;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(74,222,128,0.15);
+            border-radius: 12px;
+            padding: 0 14px;
+            transition: border-color 0.2s;
+        }
+
+        .input-container:focus-within {
+            border-color: rgba(74,222,128,0.45);
+        }
+
+        .input-icon {
+            font-size: 15px;
+            opacity: 0.5;
+            flex-shrink: 0;
+        }
+
+        .input-container input {
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 13px 0;
+            width: 100%;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            color: #e5e7eb;
+        }
+
+        .input-container input::placeholder {
+            color: rgba(255,255,255,0.2);
+        }
+
+        /* Botón */
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            margin-top: 8px;
+            background: #fb923c;
+            color: white;
+            border: none;
+            border-radius: 100px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .btn-login:hover {
+            background: #f97316;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(251,146,60,0.35);
+        }
+
+        .footer-text {
+            margin-top: 24px;
+            font-size: 13px;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        .footer-text a {
+            color: #fb923c;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer-text a:hover {
+            color: #f97316;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="bg-grid"></div>
+
+    <div class="login-card">
+        <a href="../index.html" class="back-link">← Volver al inicio</a>
+
+        <div class="logo-wrap">
+            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="28" cy="28" r="28" fill="rgba(74,222,128,0.10)"/>
+                <path d="M28 10C28 10 20 18 20 26C20 30.418 23.582 34 28 34C32.418 34 36 30.418 36 26C36 18 28 10 28 10Z" fill="#4ade80"/>
+                <path d="M22 30C22 30 16 33 16 39C16 43 19.5 46 24 46C28 46 30 43 28 39" stroke="#fb923c" stroke-width="2" stroke-linecap="round" fill="none"/>
+                <circle cx="28" cy="34" r="3" fill="#f0fdf4"/>
+            </svg>
+        </div>
+
+        <h2>Bienvenido de nuevo</h2>
+        <p class="card-subtitle">Ingresa para continuar tu misión</p>
+
+        <form name="login-form" action="signin.php" method="post">
+            <div class="form-group">
+                <label>Correo electrónico</label>
+                <div class="input-container">
+                    <span class="input-icon">✉</span>
+                    <input type="email" name="email" placeholder="tu@email.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Contraseña</label>
+                <div class="input-container">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" name="passwd" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login">Iniciar sesión</button>
+        </form>
+
+        <div class="footer-text">
+            ¿No tienes cuenta? <a href="signup.html">Regístrate aquí</a>
+        </div>
+    </div>
+
+</body>
 </html>

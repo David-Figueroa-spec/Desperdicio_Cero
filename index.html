@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misión Desperdicio Cero</title>
+    <link rel="icon" type="image/png" href="icons/market_main.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            background: #0a1a0f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* Orbes de fondo */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(74,222,128,0.12) 0%, transparent 70%);
+            top: -80px;
+            left: -100px;
+            filter: blur(80px);
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(251,146,60,0.10) 0%, transparent 70%);
+            bottom: -60px;
+            right: -60px;
+            filter: blur(80px);
+        }
+
+        /* Patrón de gradiente */
+        .bg-pattern {
+            position: absolute;
+            inset: 0;
+            opacity: 0.07;
+            background-image:
+                radial-gradient(circle at 20% 20%, #4ade80 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #fb923c 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Cuadrícula */
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(74,222,128,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(74,222,128,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* Contenido principal */
+        .content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 2rem;
+            animation: fadeUp 0.8s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Logo */
+        .logo {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 1.5rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(74,222,128,0.08);
+            border: 1px solid rgba(74,222,128,0.18);
+            border-radius: 100px;
+            padding: 5px 14px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #86efac;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.4; transform: scale(0.7); }
+        }
+
+        /* Título */
+        h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(2.4rem, 5vw, 3.8rem);
+            font-weight: 400;
+            color: #f0fdf4;
+            line-height: 1.08;
+            margin: 0 0 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        h1 em {
+            font-style: italic;
+            color: #4ade80;
+        }
+
+        /* Subtítulo */
+        .subtitle {
+            font-size: 15px;
+            color: #6b7280;
+            font-weight: 300;
+            margin: 0 0 2.5rem;
+            letter-spacing: 0.01em;
+        }
+
+        /* Botones */
+        .button-container {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 28px;
+            border-radius: 100px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: none;
+        }
+
+        .btn-signin {
+            background: transparent;
+            border: 1px solid rgba(240,253,244,0.2);
+            color: #d1fae5;
+        }
+
+        .btn-signin:hover {
+            background: rgba(240,253,244,0.06);
+            border-color: rgba(240,253,244,0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-signup {
+            background: #fb923c;
+            color: #fff;
+        }
+
+        .btn-signup:hover {
+            background: #f97316;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(251,146,60,0.35);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="bg-pattern"></div>
+    <div class="bg-grid"></div>
+
+    <div class="content">
+
+        <!-- Logo SVG -->
+        <div class="logo">
+            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="28" cy="28" r="28" fill="rgba(74,222,128,0.10)"/>
+                <path d="M28 10C28 10 20 18 20 26C20 30.418 23.582 34 28 34C32.418 34 36 30.418 36 26C36 18 28 10 28 10Z" fill="#4ade80"/>
+                <path d="M22 30C22 30 16 33 16 39C16 43 19.5 46 24 46C28 46 30 43 28 39" stroke="#fb923c" stroke-width="2" stroke-linecap="round" fill="none"/>
+                <circle cx="28" cy="34" r="3" fill="#f0fdf4"/>
+            </svg>
+        </div>
+
+        <!-- Badge -->
+        <div class="badge">
+            <div class="badge-dot"></div>
+            Economía circular
+        </div>
+
+        <!-- Título -->
+        <h1>Misión<br><em>Desperdicio Cero</em></h1>
+        <p class="subtitle">Reduce el desperdicio. Actúa con propósito.</p>
+
+        <!-- Botones -->
+        <div class="button-container">
+            <a href="src/signin.html" class="btn btn-signin">Iniciar sesión</a>
+            <a href="src/signup.html" class="btn btn-signup">Registrarse</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

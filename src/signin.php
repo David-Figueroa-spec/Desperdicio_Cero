@@ -1,50 +1,66 @@
+
 <?php     
-//step 1. Get database connection
+session_start();
+if(isset($_SESSION['session_user_id'])){
+    header('Location: main.php');
+    exit();
+}
+
+// 1. Obtener conexión
 require('../config/database.php');
 
-//Start or create session
+// Iniciar sesión
 session_start();
 
+// Si ya tiene sesión, mandarlo directo al main
 if(isset($_SESSION['session_user_id'])){
-     header('refresh:0;url=main.php');
-
-}else{
-    header('refresh:0;url=error_403.html');
+     header('Location: main.php');
+     exit();
 }
 
+// 2. Obtener datos del formulario (Solo si se envió el POST)
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $e_mail = trim($_POST['email']);
+    $p_wd = trim($_POST['passwd']);
 
-//step 2. Get form-data
-$e_mail = trim($_POST['email']);
-$p_wd = trim($_POST['passwd']);
-//$ecn_pass = password_hash($p_wd, PASSWORD_DEFAULT );
-$ecn_pass = md5($p_wd);
-//Step 3. Query to validate data
-$sql_check_user=" select 
-                    u.id,
-                    u.firstname || ' ' || u.lastname as fullname,
-                    u.email,
-                    u.password,
-                    u.url_photo
-                    from
-                    users u
-                where
-                    u.email='$e_mail' and
-                    u.password = '$ecn_pass'
-                limit 1
-";
-//Step 4. Execute query
-$res_check = pg_query($conn_supa, $sql_check_user);
+    // 3. Consulta para validar el usuario (usando nombres de tu tabla usuarios)
+    // Usamos el campo nombre_contacto o username según disponibilidad
+    $sql_check_user = "SELECT 
+                        id,
+                        COALESCE(nombre_contacto, username) as fullname,
+                        email,
+                        password_hash,
+                        user_role
+                       FROM
+                        usuarios
+                       WHERE
+                        email = $1
+                       LIMIT 1";
 
-$row = pg_fetch_assoc($res_check);
-$_SESSION['session_user_id']=$row['id'];
-$_SESSION['session_user_fullname']=$row['fullname'];
-$_SESSION['session_user_url_photo']=$row['url_photo'];
+    // 4. Ejecutar consulta segura
+    $res_check = pg_query_params($conn_supa, $sql_check_user, array($e_mail));
 
-if(pg_num_rows($res_check) > 0){
-   // echo "User exist. Go to main page!!";
-    header('refresh:0;url=main.php');
+    if(pg_num_rows($res_check) > 0){
+        $row = pg_fetch_assoc($res_check);
+        
+        // 5. Verificar contraseña encriptada (sustituye al MD5)
+        if (password_verify($p_wd, $row['password_hash'])) {
+            
+            // Credenciales correctas: Creamos la sesión
+            $_SESSION['session_user_id'] = $row['id'];
+            $_SESSION['session_user_fullname'] = $row['fullname'];
+            $_SESSION['session_user_role'] = $row['user_role'];
 
-} 
-else{ 
-    echo "Verify data";
+            header('Location: main.php');
+            exit();
+        } else {
+            echo "<script>alert('Contraseña incorrecta'); window.location.href='signin.html';</script>";
+        }
+    } else { 
+        echo "<script>alert('Usuario no encontrado'); window.location.href='signin.html';</script>";
+    }
+} else {
+    // Si intentan entrar al PHP sin enviar el formulario
+    header('Location: signin.html');
 }
+?>
