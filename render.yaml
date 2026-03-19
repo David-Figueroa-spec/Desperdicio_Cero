@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: Desperdicio_Cero_PHP
+    runtime: php
+    plan: free
+    buildCommand: ""
+    startCommand: apache2-foreground
