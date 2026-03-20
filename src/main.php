@@ -5,8 +5,8 @@ if(!isset($_SESSION['session_user_id'])){
     exit();
 }
 
-$fullname = $_SESSION['session_user_fullname'];
-$role = $_SESSION['session_user_role'];
+$fullname = $_SESSION['session_user_fullname'] ?? 'Usuario';
+$role = $_SESSION['session_user_role'] ?? 'invitado';
 ?>
 
 <!DOCTYPE html>
