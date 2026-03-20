@@ -1,133 +1,127 @@
-<?php
+<?php      
 session_start();
 
-if (!isset($_SESSION['session_user_id'])) {
+// 1. Seguridad: Si el usuario no está logueado, redirigir
+if(!isset($_SESSION['session_user_id'])){
     header('Location: signin.html');
     exit();
 }
 
+// 2. Importar la conexión
 require('../config/database.php');
-$usuario_receptor = $_SESSION['session_user_id'];
 
-// --- SOLICITAR DONACIÓN ---
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['id_donacion'])) {
-    $id_donacion = intval($_POST['id_donacion']);
+// 3. Procesar el formulario solo si se recibe una solicitud POST
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    
+    // Validar campos obligatorios
+    if (!isset($_POST['producto']) || !isset($_POST['cantidad']) || !isset($_POST['categoria'])) {
+        echo "<script>alert('Faltan campos obligatorios'); window.history.back();</script>";
+        exit();
+    }
 
-    $sql_update = "UPDATE donaciones 
-                   SET estado = 'en camino', receptor_id = $2 
-                   WHERE id = $1 AND LOWER(estado) = 'disponible'";
+    // Recibir y limpiar datos
+    $producto     = trim($_POST['producto']);
+    $cantidad     = intval($_POST['cantidad']);
+    $descripcion  = trim($_POST['descripcion'] ?? '');
+    $fecha_venc   = $_POST['fecha_vencimiento'];
+    $categoria    = $_POST['categoria'];
+    $usuario_id   = $_SESSION['session_user_id']; 
 
-    $res_update = pg_query_params($conn_supa, $sql_update, array($id_donacion, $usuario_receptor));
+    // Preparar la consulta SQL
+    $sql_insert = "INSERT INTO donaciones (
+                        producto, 
+                        cantidad, 
+                        descripcion, 
+                        fecha_vencimiento, 
+                        categoria, 
+                        estado,
+                        fecha_registro
+                    ) VALUES ($1, $2, $3, $4, $5, 'disponible', NOW())";
 
-    if ($res_update) {
-        $solicitud_exitosa = true;
+    // Ejecutar con pg_query_params
+    $params = array($producto, $cantidad, $descripcion, $fecha_venc, $categoria);
+    $res_insert = pg_query_params($conn_supa, $sql_insert, $params);
+
+    if($res_insert){
+        echo "<script>alert('Donación registrada exitosamente'); window.location.href='main.php';</script>";
+        exit();
     } else {
-        $error_msg = "Error al procesar la solicitud.";
+        $error = pg_last_error($conn_supa);
+        echo "<script>alert('Error al registrar: " . addslashes($error) . "'); window.history.back();</script>";
+        exit();
     }
 }
-
-// --- CONSULTAR DONACIONES DISPONIBLES ---
-$sql_select = "SELECT id, producto, cantidad, descripcion, fecha_vencimiento, categoria 
-               FROM donaciones 
-               WHERE LOWER(estado) = 'disponible' 
-               ORDER BY fecha_vencimiento ASC";
-
-$res_donaciones = pg_query($conn_supa, $sql_select);
-$donaciones = pg_fetch_all($res_donaciones) ?: [];
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donaciones | ReAprovecha</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Registrar Donación - Desperdicio Cero</title>
     <style>
-        :root { --verde: #2ecc71; --oscuro: #2c3e50; --gris: #f4f7f6; }
-        body { font-family: 'Poppins', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
-        h1 { text-align: center; color: var(--oscuro); }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: white; border-radius: 12px; padding: 20px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid var(--verde); }
-
-        .badge { background: #e8f5e9; color: #27ae60; padding: 4px 8px;
-                 border-radius: 5px; font-size: 0.8rem; font-weight: 600; }
-        .btn { background: var(--verde); color: white; border: none; padding: 12px;
-               width: 100%; border-radius: 6px; cursor: pointer; font-weight: 600;
-               margin-top: 15px; font-family: 'Poppins', sans-serif; font-size: 1rem; }
-        .btn:hover { background: #27ae60; }
-
-        .msg-error { padding: 15px; background: #f8d7da; color: #721c24;
-                     border-radius: 8px; margin-bottom: 20px; text-align: center; }
-
-        /* Modal */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0;
-                         width: 100%; height: 100%; background: rgba(0,0,0,0.5);
-                         justify-content: center; align-items: center; z-index: 999; }
-        .modal-overlay.active { display: flex; }
-        .modal { background: white; border-radius: 16px; padding: 40px 30px;
-                 text-align: center; max-width: 380px; width: 90%;
-                 box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: popIn 0.3s ease; }
-        @keyframes popIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to   { transform: scale(1);   opacity: 1; }
-        }
-        .modal .icono { font-size: 3rem; margin-bottom: 10px; }
-        .modal h2 { color: var(--oscuro); margin: 0 0 10px; }
-        .modal p  { color: #666; margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 80px; resize: vertical; }
+        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        button:hover { background-color: #219150; }
+        .btn-back { display: block; text-align: center; margin-top: 15px; color: #7f8c8d; text-decoration: none; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <!-- Modal de éxito -->
-    <div class="modal-overlay <?= isset($solicitud_exitosa) ? 'active' : '' ?>" id="modalExito">
-        <div class="modal">
-            <div class="icono">✅</div>
-            <h2>¡Solicitud enviada!</h2>
-            <p>El alimento está en camino. Serás redirigido en un momento...</p>
+<div class="card">
+    <h2>Nueva Donación</h2>
+    
+    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
+        
+        <div class="form-group">
+            <label for="producto">Nombre del Producto:</label>
+            <input type="text" id="producto" name="producto" required placeholder="Ej: Arroz Diana 1kg">
         </div>
-    </div>
 
-    <div class="container">
-        <h1>🍎 Alimentos Disponibles</h1>
-
-        <?php if (isset($error_msg)): ?>
-            <div class="msg-error">❌ <?= htmlspecialchars($error_msg) ?></div>
-        <?php endif; ?>
-
-        <div class="grid">
-            <?php if (count($donaciones) > 0): ?>
-                <?php foreach ($donaciones as $row): ?>
-                    <div class="card">
-                        <span class="badge"><?= htmlspecialchars($row['categoria']) ?></span>
-                        <h3><?= htmlspecialchars($row['producto']) ?></h3>
-                        <p><strong>Cantidad:</strong> <?= htmlspecialchars($row['cantidad']) ?></p>
-                        <p><strong>Vence:</strong> <?= htmlspecialchars($row['fecha_vencimiento']) ?></p>
-                        <p><em><?= htmlspecialchars($row['descripcion']) ?></em></p>
-
-                        <form method="POST">
-                            <input type="hidden" name="id_donacion" value="<?= $row['id'] ?>">
-                            <button type="submit" class="btn">Solicitar ahora</button>
-                        </form>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p style="text-align:center; color:#666;">No hay alimentos disponibles por el momento.</p>
-            <?php endif; ?>
+        <div class="form-group">
+            <label for="cantidad">Cantidad (unidades/paquetes):</label>
+            <input type="number" id="cantidad" name="cantidad" min="1" required placeholder="1">
         </div>
-    </div>
 
-    <script>
-        const modal = document.getElementById('modalExito');
-        if (modal.classList.contains('active')) {
-            setTimeout(() => {
-                window.location.href = '../index.php'; // Ajusta si tu main tiene otra ruta
-            }, 2500);
-        }
-    </script>
+        <div class="form-group">
+            <label for="categoria">Categoría:</label>
+            <select id="categoria" name="categoria" required>
+                <option value="" disabled selected>Seleccione una categoría...</option>
+                <option value="Perecedero">Perecedero</option>
+                <option value="No perecedero">No perecedero</option>
+                <option value="Enlatado">Enlatado</option>
+                <option value="Fruta/Verdura">Fruta/Verdura</option>
+                <option value="Lácteos">Lácteos</option>
+                <option value="Cárnicos">Cárnicos</option>
+                <option value="Panadería">Panadería</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="fecha_vencimiento">Fecha de Vencimiento:</label>
+            <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" required>
+        </div>
+
+        <div class="form-group">
+            <label for="descripcion">Descripción adicional (opcional):</label>
+            <textarea id="descripcion" name="descripcion" placeholder="Ej: El empaque está sellado pero tiene una pequeña arruga."></textarea>
+        </div>
+
+        <button type="submit">Registrar Alimento</button>
+        <a href="main.php" class="btn-back">Volver al Panel Principal</a>
+    </form>
+</div>
+
+<script>
+    // Evitar registrar fechas pasadas
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha_vencimiento').setAttribute('min', today);
+</script>
 
 </body>
 </html>
