@@ -5,8 +5,9 @@ if(!isset($_SESSION['session_user_id'])){
     exit();
 }
 
-$fullname = $_SESSION['session_user_fullname'] ?? 'Usuario';
-$role = $_SESSION['session_user_role'] ?? 'invitado';
+$fullname = $_SESSION['session_user_fullname'] ?? 'Sin nombre';
+$contacto = $_SESSION['session_user_contact']  ?? '';
+$role     = $_SESSION['session_user_role']     ?? 'invitado';
 ?>
 
 <!DOCTYPE html>
@@ -332,7 +333,12 @@ $role = $_SESSION['session_user_role'] ?? 'invitado';
     </a>
     <div class="user-nav">
         <span class="role-badge badge-<?php echo $role; ?>"><?php echo ucfirst($role); ?></span>
-        <span>Hola, <strong><?php echo htmlspecialchars($fullname); ?></strong></span>
+        <span>
+    <?php if($contacto): ?>
+        <?php echo htmlspecialchars($contacto); ?> · 
+    <?php endif; ?>
+    <strong><?php echo htmlspecialchars($fullname); ?></strong>
+</span>
         <a href="logout.php" class="logout-link">Salir →</a>
     </div>
 </header>
