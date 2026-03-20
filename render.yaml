@@ -1,7 +1,7 @@
 services:
   - type: web
     name: proyecto-mision-desperdicio
-    runtime: php
+    runtime: docker
     plan: free
     buildCommand: ""
-    startCommand: apache2-foreground
+    startCommand: ""
