@@ -11,7 +11,7 @@ $usuario_id = $_SESSION['session_user_id'];
 
 // --- CONFIRMAR ENTREGA ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['id_entrega'])) {
-    $id_donacion = $_POST['id_entrega'];
+    
     $sql_update = "UPDATE donaciones 
                    SET estado = 'entregado' 
                    WHERE id = $1 AND LOWER(estado) = 'en camino' AND receptor_id = $2";
