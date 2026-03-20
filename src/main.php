@@ -30,7 +30,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             color: #e5e7eb;
         }
 
-        /* Fondo */
         .orb {
             position: fixed;
             border-radius: 50%;
@@ -57,7 +56,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             pointer-events: none; z-index: 0;
         }
 
-        /* Header */
         header {
             position: sticky; top: 0; z-index: 100;
             background: rgba(10,26,15,0.90);
@@ -86,7 +84,7 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             font-size: 11px; font-weight: 500;
             letter-spacing: 0.05em; text-transform: uppercase;
         }
-        .badge-donador { background: rgba(251,146,60,0.12); border: 1px solid rgba(251,146,60,0.3); color: #fb923c; }
+        .badge-donador  { background: rgba(251,146,60,0.12); border: 1px solid rgba(251,146,60,0.3); color: #fb923c; }
         .badge-receptor { background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; }
         .badge-jugador  { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.3); color: #a78bfa; }
 
@@ -97,7 +95,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         }
         .logout-link:hover { color: #fb923c; }
 
-        /* Layout */
         .container {
             position: relative; z-index: 2;
             padding: 36px 5%; max-width: 1100px;
@@ -109,7 +106,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* Bienvenida */
         .welcome-bar {
             display: flex; align-items: center;
             justify-content: space-between;
@@ -126,7 +122,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         .welcome-bar h1 em { font-style: italic; color: var(--role-color, #4ade80); }
         .welcome-bar p { font-size: 13px; color: #6b7280; font-weight: 300; margin-top: 4px; }
 
-        /* Cards base */
         .card {
             background: rgba(15,30,18,0.85);
             backdrop-filter: blur(16px);
@@ -144,7 +139,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             letter-spacing: -0.01em;
         }
 
-        /* Stats */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -176,7 +170,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         }
         .stat-box p { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }
 
-        /* Botones */
         .btn {
             display: inline-flex; align-items: center; gap: 8px;
             padding: 12px 22px; border-radius: 100px;
@@ -188,13 +181,10 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         }
         .btn-orange { background: #fb923c; color: white; }
         .btn-orange:hover { background: #f97316; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(251,146,60,0.35); }
-
         .btn-green { background: #4ade80; color: #0a1a0f; }
         .btn-green:hover { background: #22c55e; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(74,222,128,0.3); }
-
         .btn-purple { background: #a78bfa; color: #0a1a0f; }
         .btn-purple:hover { background: #8b5cf6; color: white; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(167,139,250,0.3); }
-
         .btn-ghost {
             background: transparent;
             border: 1px solid rgba(255,255,255,0.12);
@@ -204,11 +194,9 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
 
         .actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
-        /* Grid 2 columnas */
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
         @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
 
-        /* Tabla de historial */
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         thead th {
@@ -226,11 +214,10 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             display: inline-block; padding: 3px 10px;
             border-radius: 100px; font-size: 11px; font-weight: 500;
         }
-        .tag-active   { background: rgba(74,222,128,0.12); color: #4ade80; }
-        .tag-pending  { background: rgba(250,204,21,0.12); color: #facc15; }
-        .tag-done     { background: rgba(156,163,175,0.12); color: #9ca3af; }
+        .tag-active  { background: rgba(74,222,128,0.12); color: #4ade80; }
+        .tag-pending { background: rgba(250,204,21,0.12); color: #facc15; }
+        .tag-done    { background: rgba(156,163,175,0.12); color: #9ca3af; }
 
-        /* Lista de donaciones disponibles */
         .donation-list { display: flex; flex-direction: column; gap: 12px; }
         .donation-item {
             display: flex; align-items: center;
@@ -247,7 +234,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         .donation-item .info strong { display: block; font-size: 14px; color: #f0fdf4; font-weight: 500; margin-bottom: 2px; }
         .donation-item .info span { font-size: 12px; color: #6b7280; }
 
-        /* Progreso jugador */
         .progress-wrap { margin-bottom: 8px; }
         .progress-label {
             display: flex; justify-content: space-between;
@@ -263,7 +249,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             transition: width 1s ease;
         }
 
-        /* Ranking */
         .ranking-list { display: flex; flex-direction: column; gap: 10px; }
         .ranking-item {
             display: flex; align-items: center; gap: 14px;
@@ -277,14 +262,13 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             display: flex; align-items: center; justify-content: center;
             font-size: 12px; font-weight: 500; flex-shrink: 0;
         }
-        .rank-1 { background: rgba(250,204,21,0.15); color: #facc15; }
-        .rank-2 { background: rgba(156,163,175,0.15); color: #9ca3af; }
-        .rank-3 { background: rgba(251,146,60,0.15); color: #fb923c; }
+        .rank-1     { background: rgba(250,204,21,0.15); color: #facc15; }
+        .rank-2     { background: rgba(156,163,175,0.15); color: #9ca3af; }
+        .rank-3     { background: rgba(251,146,60,0.15); color: #fb923c; }
         .rank-other { background: rgba(255,255,255,0.05); color: #6b7280; }
         .rank-name { flex: 1; font-size: 13px; color: #d1d5db; }
-        .rank-pts { font-size: 13px; font-weight: 500; color: #a78bfa; }
+        .rank-pts  { font-size: 13px; font-weight: 500; color: #a78bfa; }
 
-        /* Retos */
         .retos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -302,7 +286,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         .reto-card p  { font-size: 12px; color: #6b7280; line-height: 1.5; margin-bottom: 12px; }
         .reto-pts { font-size: 11px; font-weight: 500; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.06em; }
 
-        /* Banner donación jugador */
         .donate-banner {
             background: rgba(251,146,60,0.07);
             border: 1px solid rgba(251,146,60,0.18);
@@ -334,11 +317,11 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
     <div class="user-nav">
         <span class="role-badge badge-<?php echo $role; ?>"><?php echo ucfirst($role); ?></span>
         <span>
-    <?php if($contacto): ?>
-        <?php echo htmlspecialchars($contacto); ?> · 
-    <?php endif; ?>
-    <strong><?php echo htmlspecialchars($fullname); ?></strong>
-</span>
+            <?php if($contacto): ?>
+                <?php echo htmlspecialchars($contacto); ?> · 
+            <?php endif; ?>
+            <strong><?php echo htmlspecialchars($fullname); ?></strong>
+        </span>
         <a href="logout.php" class="logout-link">Salir →</a>
     </div>
 </header>
@@ -399,7 +382,6 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         </div>
     </div>
 
-
 <?php elseif ($role == 'receptor'): ?>
 <!-- ═══════════════════════════════════════════
      DASHBOARD RECEPTOR
@@ -412,57 +394,42 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
     </div>
 
     <div class="stats-grid">
-        <div class="stat-box" style="--accent: #4ade80;"><h3>245 kg</h3><p>Total recibido</p></div>
-        <div class="stat-box" style="--accent: #fb923c;"><h3>850</h3><p>Personas ayudadas</p></div>
-        <div class="stat-box" style="--accent: #facc15;"><h3>3</h3><p>Solicitudes activas</p></div>
-    </div>
-
-    <div class="two-col">
-        <div class="card">
-            <div class="card-title">🟢 Donaciones disponibles hoy</div>
-            <div class="donation-list">
-                <div class="donation-item">
-                    <div class="info">
-                        <strong>Pan integral — 20 kg</strong>
-                        <span>Supermercado Pasto · Disponible hasta las 6pm</span>
-                    </div>
-                    <button class="btn btn-green">Solicitar</button>
-                </div>
-                <div class="donation-item">
-                    <div class="info">
-                        <strong>Frutas variadas — 30 kg</strong>
-                        <span>Mercado Central · Disponible hasta las 4pm</span>
-                    </div>
-                    <button class="btn btn-green">Solicitar</button>
-                </div>
-                <div class="donation-item">
-                    <div class="info">
-                        <strong>Lácteos — 10 kg</strong>
-                        <span>Tienda La Esquina · Disponible ahora</span>
-                    </div>
-                    <button class="btn btn-green">Solicitar</button>
-                </div>
-            </div>
+        <div class="stat-box" style="--accent: #4ade80;">
+            <h3>38</h3>
+            <p>Alimentos recibidos</p>
         </div>
-
-        <div class="card">
-            <div class="card-title">📦 Historial de recepciones</div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr><th>Producto</th><th>Cantidad</th><th>Estado</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>Verduras</td><td>18 kg</td><td><span class="tag tag-active">Recibido</span></td></tr>
-                        <tr><td>Pan</td><td>12 kg</td><td><span class="tag tag-done">Completado</span></td></tr>
-                        <tr><td>Frutas</td><td>22 kg</td><td><span class="tag tag-done">Completado</span></td></tr>
-                        <tr><td>Lácteos</td><td>8 kg</td><td><span class="tag tag-pending">En camino</span></td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <div class="stat-box" style="--accent: #fb923c;">
+            <h3>850</h3>
+            <p>Personas ayudadas</p>
+        </div>
+        <div class="stat-box" style="--accent: #facc15;">
+            <h3>3</h3>
+            <p>Solicitudes activas</p>
         </div>
     </div>
 
+    <!-- Botones de navegación -->
+    <div style="
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+        padding: 20px 24px;
+        background: rgba(15,30,18,0.85);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(74,222,128,0.10);
+        border-radius: 20px;
+    ">
+        <a href="donations.html" class="btn btn-green" style="flex: 1; justify-content: center; min-width: 160px;">
+            🟢 Alimentos disponibles
+        </a>
+        <a href="orders.html" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">
+            📦 Mis pedidos
+        </a>
+        <a href="help.html" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">
+            🤝 Personas ayudadas
+        </a>
+    </div>
 
 <?php else: ?>
 <!-- ═══════════════════════════════════════════
