@@ -1,12 +1,5 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['session_user_id'])) {
-    header('Location: signin.html');
-    exit();
-}
-
-require('../config/database.php'); // ← solo una vez
+include("../config/database.php");
 
 if (!isset($pdo) || $pdo === null) {
     die("Error: No se pudo establecer la conexión PDO a la base de datos.");
@@ -14,9 +7,9 @@ if (!isset($pdo) || $pdo === null) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_donacion'])) {
     $id = (int)$_POST['id_donacion'];
-    $receptor_id = $_SESSION['session_user_id'];
+    $receptor_id = $_SESSION['session_user_id']; // Asegúrate de tener session_start() arriba
     try {
-        $query = "UPDATE donaciones SET estado = 'en camino', receptor_id = :receptor_id 
+        $query = "UPDATE donaciones SET estado = 'En camino', receptor_id = :receptor_id 
                   WHERE id = :id AND LOWER(estado) = 'disponible'";
         $stmt = $pdo->prepare($query);
         $stmt->execute(['id' => $id, 'receptor_id' => $receptor_id]);
@@ -51,17 +44,28 @@ try {
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid var(--verde); }
 
         .badge { background: #e8f5e9; color: #27ae60; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: 600; }
-        .btn { background: var(--verde); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 15px; font-family: 'Poppins', sans-serif; }
+        .btn { background: var(--verde); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 15px; }
         .btn:hover { background: #27ae60; }
 
         .msg-error { padding: 15px; background: #f8d7da; color: #721c24; border-radius: 8px; margin-bottom: 20px; text-align: center; }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0;
-                         width: 100%; height: 100%; background: rgba(0,0,0,0.5);
-                         justify-content: center; align-items: center; z-index: 999; }
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+            z-index: 999;
+        }
         .modal-overlay.active { display: flex; }
-        .modal { background: white; border-radius: 16px; padding: 40px 30px; text-align: center;
-                 max-width: 380px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: popIn 0.3s ease; }
+        .modal {
+            background: white; border-radius: 16px;
+            padding: 40px 30px; text-align: center;
+            max-width: 380px; width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: popIn 0.3s ease;
+        }
         @keyframes popIn {
             from { transform: scale(0.8); opacity: 0; }
             to   { transform: scale(1);   opacity: 1; }
@@ -73,6 +77,7 @@ try {
 </head>
 <body>
 
+    <!-- Modal de éxito -->
     <div class="modal-overlay <?= isset($solicitud_exitosa) ? 'active' : '' ?>" id="modalExito">
         <div class="modal">
             <div class="icono">✅</div>
@@ -110,10 +115,11 @@ try {
     </div>
 
     <script>
+        // Si el modal está activo, redirigir al main después de 2.5 segundos
         const modal = document.getElementById('modalExito');
         if (modal.classList.contains('active')) {
             setTimeout(() => {
-                window.location.href = '../main.php';
+                window.location.href = '../index.html'; // Ajusta la ruta a tu main
             }, 2500);
         }
     </script>
