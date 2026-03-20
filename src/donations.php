@@ -2,16 +2,6 @@
 // 1. CONFIGURACIÓN Y LÓGICA (El "Cerebro")
 include("../config/database.php");
 
-try {
-    $test = $pdo->query("SELECT id, producto, estado, LOWER(estado) as estado_lower FROM donaciones");
-    $rows = $test->fetchAll(PDO::FETCH_ASSOC);
-    echo "<pre>";
-    print_r($rows);
-    echo "</pre>";
-} catch (PDOException $e) {
-    echo "Error debug: " . $e->getMessage();
-}
-die();
 
 // Verificación de seguridad por si la conexión PDO falla
 if (!isset($pdo) || $pdo === null) {
@@ -22,7 +12,7 @@ if (!isset($pdo) || $pdo === null) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_donacion'])) {
     $id = (int)$_POST['id_donacion'];
     try {
-        $query = "UPDATE donaciones SET estado = 'En camino' WHERE id = :id AND estado = 'disponible'";
+        $query = "UPDATE donaciones SET estado = 'En camino' WHERE id = :id AND LOWER(estado) = 'disponible'";
         $stmt = $pdo->prepare($query);
         $stmt->execute(['id' => $id]);
         header("Location: donations.php?success=1");
@@ -34,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_donacion'])) {
 
 // Consulta de datos para mostrar en las tarjetas
 try {
-    $stmt = $pdo->query("SELECT * FROM donaciones WHERE estado = 'Disponible' ORDER BY fecha_vencimiento ASC");
+    $stmt = $pdo->query("SELECT * FROM donaciones WHERE LOWER(estado) = 'disponible' ORDER BY fecha_vencimiento ASC");
     $donaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $donaciones = [];
