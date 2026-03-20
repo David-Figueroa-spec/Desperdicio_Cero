@@ -354,7 +354,7 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             <h1>Bienvenido, <em><?php echo htmlspecialchars($fullname); ?></em></h1>
             <p>Gracias por reducir el desperdicio en Pasto 🌱</p>
         </div>
-        <button class="btn btn-orange">+ Registrar Donación</button>
+        <a href="add_donation.html" class="btn btn-orange">+ Registrar Donación</a>
     </div>
 
     <div class="stats-grid">
