@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: Desperdicio_Cero_PHP
+    name: proyecto-mision-desperdicio
     runtime: php
     plan: free
     buildCommand: ""
