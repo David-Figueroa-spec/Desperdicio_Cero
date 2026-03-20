@@ -119,7 +119,7 @@ try {
         const modal = document.getElementById('modalExito');
         if (modal.classList.contains('active')) {
             setTimeout(() => {
-                window.location.href = '../index.html'; // Ajusta la ruta a tu main
+                window.location.href = '../main.php'; // Ajusta la ruta a tu main
             }, 2500);
         }
     </script>

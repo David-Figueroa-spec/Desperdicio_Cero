@@ -23,39 +23,19 @@
             padding: 2rem 1rem;
         }
 
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            pointer-events: none;
-            filter: blur(80px);
-        }
-        .orb-1 {
-            width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(74,222,128,0.12) 0%, transparent 70%);
-            top: -80px; left: -100px;
-        }
-        .orb-2 {
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(251,146,60,0.10) 0%, transparent 70%);
-            bottom: -60px; right: -60px;
-        }
+        /* Fondo Decorativo */
+        .orb { position: fixed; border-radius: 50%; pointer-events: none; filter: blur(80px); }
+        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(74,222,128,0.12) 0%, transparent 70%); top: -80px; left: -100px; }
+        .orb-2 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(251,146,60,0.10) 0%, transparent 70%); bottom: -60px; right: -60px; }
+        .bg-grid { position: fixed; inset: 0; background-image: linear-gradient(rgba(74,222,128,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,0.04) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
 
-        .bg-grid {
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(74,222,128,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(74,222,128,0.04) 1px, transparent 1px);
-            background-size: 60px 60px;
-            pointer-events: none;
-        }
-
+        /* Card Principal */
         .register-card {
             position: relative;
             z-index: 2;
             background: rgba(15, 30, 18, 0.85);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(74,222,128,0.12);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 40px;
             border-radius: 24px;
             width: 100%;
@@ -69,175 +49,72 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #4ade80;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: 0.03em;
-            margin-bottom: 28px;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-            float: left;
-        }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: #4ade80; text-decoration: none; font-size: 13px; font-weight: 500; margin-bottom: 28px; opacity: 0.8; transition: opacity 0.2s; float: left; }
         .back-link:hover { opacity: 1; }
 
-        .logo-wrap {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 20px;
-            clear: both;
-        }
+        .logo-wrap { width: 64px; height: 64px; margin: 0 auto 20px; clear: both; }
+        h2 { font-family: 'DM Serif Display', serif; font-size: 1.9rem; color: #f0fdf4; margin-bottom: 6px; }
+        .card-subtitle { font-size: 14px; color: #6b7280; margin-bottom: 28px; }
 
-        h2 {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.9rem;
-            font-weight: 400;
-            color: #f0fdf4;
-            margin-bottom: 6px;
-            letter-spacing: -0.02em;
-        }
-
-        .card-subtitle {
-            font-size: 14px;
-            color: #6b7280;
-            font-weight: 300;
-            margin-bottom: 28px;
-        }
-
-        /* Selector de roles */
-        .role-grid {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 28px;
-        }
-
-        .role-item {
-            flex: 1;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px;
-            padding: 14px 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: rgba(255,255,255,0.03);
-        }
-
-        .role-item:hover {
-            background: rgba(255,255,255,0.06);
-        }
-
+        /* Selector de Roles */
+        .role-grid { display: flex; gap: 10px; margin-bottom: 28px; }
+        .role-item { flex: 1; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 14px 6px; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.03); }
+        .role-item:hover { background: rgba(255,255,255,0.06); }
         .role-item .role-icon { font-size: 22px; display: block; margin-bottom: 6px; }
-        .role-item span { display: block; font-weight: 500; font-size: 13px; color: #e5e7eb; margin-top: 2px; }
-        .role-item small { font-size: 10px; color: #6b7280; letter-spacing: 0.04em; text-transform: uppercase; }
+        .role-item span { display: block; font-weight: 500; font-size: 13px; color: #e5e7eb; }
+        .role-item small { font-size: 10px; color: #6b7280; text-transform: uppercase; }
 
-        /* Estados activos por rol */
-        .role-item.active[data-role="donador"] {
-            border: 1.5px solid rgba(251,146,60,0.6);
-            background: rgba(251,146,60,0.08);
-        }
+        /* Estados Activos del Selector */
+        .role-item.active[data-role="donador"] { border: 1.5px solid #fb923c; background: rgba(251,146,60,0.1); }
         .role-item.active[data-role="donador"] span { color: #fb923c; }
 
-        .role-item.active[data-role="receptor"] {
-            border: 1.5px solid rgba(74,222,128,0.6);
-            background: rgba(74,222,128,0.08);
-        }
+        .role-item.active[data-role="receptor"] { border: 1.5px solid #4ade80; background: rgba(74,222,128,0.1); }
         .role-item.active[data-role="receptor"] span { color: #4ade80; }
 
-        .role-item.active[data-role="jugador"] {
-            border: 1.5px solid rgba(250,204,21,0.6);
-            background: rgba(250,204,21,0.08);
-        }
+        .role-item.active[data-role="jugador"] { border: 1.5px solid #facc15; background: rgba(250,204,21,0.1); }
         .role-item.active[data-role="jugador"] span { color: #facc15; }
 
-        /* Campos del formulario */
-        .form-group {
-            text-align: left;
-            margin-bottom: 18px;
+        /* Estilos Dinámicos del Formulario según el Rol Seleccionado */
+        #fields-container.role-donador label { color: #fb923c; }
+        #fields-container.role-donador .input-wrapper:focus-within { border-color: #fb923c; }
+
+        #fields-container.role-receptor label { color: #4ade80; }
+        #fields-container.role-receptor .input-wrapper:focus-within { border-color: #4ade80; }
+
+        #fields-container.role-jugador label { color: #facc15; }
+        #fields-container.role-jugador .input-wrapper:focus-within { border-color: #facc15; }
+
+        /* Elementos del Formulario */
+        .form-group { text-align: left; margin-bottom: 18px; }
+        label { display: block; font-size: 12px; font-weight: 500; text-transform: uppercase; margin-bottom: 8px; transition: color 0.3s ease; }
+        
+        .input-wrapper { 
+            display: flex; align-items: center; gap: 10px; 
+            background: rgba(255,255,255,0.04); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; padding: 0 14px; 
+            transition: all 0.3s ease; 
         }
 
-        label {
-            display: block;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: #4ade80;
-            margin-bottom: 8px;
+        .input-icon { font-size: 15px; opacity: 0.5; }
+        .input-wrapper input, .input-wrapper select { 
+            background: transparent; border: none; outline: none; 
+            padding: 13px 0; width: 100%; color: #e5e7eb; font-size: 14px; 
         }
-
-        .input-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(74,222,128,0.15);
-            border-radius: 12px;
-            padding: 0 14px;
-            transition: border-color 0.2s;
-        }
-
-        .input-wrapper:focus-within {
-            border-color: rgba(74,222,128,0.45);
-        }
-
-        .input-icon { font-size: 15px; opacity: 0.5; flex-shrink: 0; }
-
-        .input-wrapper input,
-        .input-wrapper select {
-            background: transparent;
-            border: none;
-            outline: none;
-            padding: 13px 0;
-            width: 100%;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px;
-            color: #e5e7eb;
-        }
-
         .input-wrapper input::placeholder { color: rgba(255,255,255,0.2); }
+        select option { background: #0f1e12; color: #e5e7eb; }
 
-        .input-wrapper select option { background: #0f1e12; color: #e5e7eb; }
-
-        /* Botón principal */
-        .btn-main {
-            width: 100%;
-            padding: 14px;
-            margin-top: 8px;
-            border: none;
-            border-radius: 100px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: white;
-            cursor: pointer;
-            transition: all 0.25s ease;
-        }
-
+        /* Botón dinámico */
+        .btn-main { width: 100%; padding: 14px; margin-top: 8px; border: none; border-radius: 100px; font-weight: 500; text-transform: uppercase; cursor: pointer; transition: all 0.3s; color: white; }
         .btn-donador { background: #fb923c; }
-        .btn-donador:hover { background: #f97316; box-shadow: 0 8px 24px rgba(251,146,60,0.35); transform: translateY(-1px); }
-
+        .btn-donador:hover { background: #f97316; box-shadow: 0 8px 24px rgba(251,146,60,0.3); }
         .btn-receptor { background: #4ade80; color: #0a1a0f; }
-        .btn-receptor:hover { background: #22c55e; box-shadow: 0 8px 24px rgba(74,222,128,0.3); transform: translateY(-1px); }
-
+        .btn-receptor:hover { background: #22c55e; box-shadow: 0 8px 24px rgba(74,222,128,0.3); }
         .btn-jugador { background: #facc15; color: #0a1a0f; }
-        .btn-jugador:hover { background: #eab308; box-shadow: 0 8px 24px rgba(250,204,21,0.3); transform: translateY(-1px); }
+        .btn-jugador:hover { background: #eab308; box-shadow: 0 8px 24px rgba(250,204,21,0.3); }
 
-        .footer-text {
-            margin-top: 24px;
-            font-size: 13px;
-            color: #6b7280;
-        }
-        .footer-text a {
-            color: #fb923c;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .footer-text a:hover { color: #f97316; }
+        .footer-text { margin-top: 24px; font-size: 13px; color: #6b7280; }
+        .footer-text a { color: #fb923c; text-decoration: none; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -281,7 +158,7 @@
 
         <form id="signupForm" action="signup.php" method="POST">
             <input type="hidden" name="user_role" id="user_role" value="donador">
-            <div id="fields-container"></div>
+            <div id="fields-container" class="role-donador"></div>
             <button type="submit" id="mainBtn" class="btn-main btn-donador">Crear cuenta</button>
         </form>
 
@@ -317,9 +194,13 @@
     };
 
     function setFields(role) {
+        // Actualizar contenido y clase del contenedor
         container.innerHTML = templates[role] + `
             <div class="form-group"><label>Contraseña</label><div class="input-wrapper"><span class="input-icon">🔒</span><input type="password" name="passwd" placeholder="••••••••" required></div></div>
         `;
+        container.className = `role-${role}`; 
+        
+        // Actualizar input oculto y estilo del botón
         roleInput.value = role;
         btn.className = `btn-main btn-${role}`;
     }
@@ -332,6 +213,7 @@
         });
     });
 
+    // Carga inicial
     setFields('donador');
 </script>
 
