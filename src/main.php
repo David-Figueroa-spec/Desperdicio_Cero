@@ -420,7 +420,7 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         border: 1px solid rgba(74,222,128,0.10);
         border-radius: 20px;
     ">
-        <a href="donations.html" class="btn btn-green" style="flex: 1; justify-content: center; min-width: 160px;">
+        <a href="donations.php" class="btn btn-green" style="flex: 1; justify-content: center; min-width: 160px;">
             🟢 Alimentos disponibles
         </a>
         <a href="orders.html" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">

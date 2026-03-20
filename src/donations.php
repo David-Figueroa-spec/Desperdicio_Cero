@@ -1,34 +1,24 @@
 <?php
-session_start(); // Opcional: para manejar mensajes de sesión
+// 1. CONFIGURACIÓN Y LÓGICA (El "Cerebro")
 include("../config/database.php");
 
-// 1. Lógica de actualización (POST)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['donation_id'])) {
-    $id = $_POST['donation_id'];
-    
+// Lógica de actualización cuando alguien hace clic en "Solicitar"
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_donacion'])) {
+    $id = (int)$_POST['id_donacion'];
     try {
         $query = "UPDATE donaciones SET estado = 'En camino' WHERE id = :id AND estado = 'Disponible'";
         $stmt = $pdo->prepare($query);
         $stmt->execute(['id' => $id]);
-
-        // Verificamos si realmente se cambió algo (si el ID existía y estaba Disponible)
-        if ($stmt->rowCount() > 0) {
-            header("Location: donations.php?success=1");
-        } else {
-            header("Location: donations.php?error=not_found");
-        }
+        header("Location: donations.php?success=1");
         exit();
     } catch (PDOException $e) {
-        // En producción, no muestres $e->getMessage(), regístralo en un log.
-        die("Error en la base de datos.");
+        $error_msg = "Error al procesar la solicitud.";
     }
 }
 
-// 2. Consulta de donaciones
+// Consulta de datos para mostrar en las tarjetas
 try {
-    $query = "SELECT * FROM donaciones WHERE estado = 'Disponible'";
-    $stmt = $pdo->prepare($query);
-    $stmt->execute();
+    $stmt = $pdo->query("SELECT * FROM donaciones WHERE estado = 'Disponible' ORDER BY fecha_vencimiento ASC");
     $donaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $donaciones = [];
@@ -39,41 +29,58 @@ try {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Donaciones Disponibles</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donaciones | ReAprovecha</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
-        .alert { padding: 10px; margin-bottom: 20px; color: white; border-radius: 5px; }
-        .success { background-color: #28a745; }
-        .error { background-color: #dc3545; }
+        /* Estilos modernos y limpios */
+        :root { --verde: #2ecc71; --oscuro: #2c3e50; --gris: #f4f7f6; }
+        body { font-family: 'Poppins', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        h1 { text-align: center; color: var(--oscuro); }
+        
+        /* Grid de Tarjetas */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid var(--verde); }
+        
+        /* Detalles */
+        .badge { background: #e8f5e9; color: #27ae60; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: 600; }
+        .btn { background: var(--verde); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 15px; }
+        .btn:hover { background: #27ae60; }
+        
+        /* Mensajes */
+        .msg { padding: 15px; background: #d4edda; color: #155724; border-radius: 8px; margin-bottom: 20px; text-align: center; }
     </style>
 </head>
 <body>
-    <h1>Donaciones Disponibles</h1>
 
-    <?php if (isset($_GET['success'])): ?>
-        <div class="alert success">¡La donación ha sido solicitada con éxito!</div>
-    <?php endif; ?>
-    
-    <?php if (isset($_GET['error'])): ?>
-        <div class="alert error">No se pudo procesar la solicitud. Intenta de nuevo.</div>
-    <?php endif; ?>
-    
     <div class="container">
-        <?php if (count($donaciones) > 0): ?>
-            <?php foreach ($donaciones as $donacion): ?>
-                <div class="card">
-                    <h3><?php echo htmlspecialchars($donacion['nombre_alimento']); ?></h3>
-                    <p>Cantidad: <?php echo htmlspecialchars($donacion['cantidad']); ?></p>
-                    
-                    <form method="POST" onsubmit="return confirm('¿Estás seguro de solicitar esta donación?');">
-                        <input type="hidden" name="donation_id" value="<?php echo (int)$donacion['id']; ?>">
-                        <button type="submit">Solicitar Donación</button>
-                    </form>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p>No hay donaciones disponibles en este momento.</p>
+        <h1>🍎 Alimentos Disponibles</h1>
+
+        <?php if(isset($_GET['success'])): ?>
+            <div class="msg">✅ ¡Solicitud enviada! El alimento está en camino.</div>
         <?php endif; ?>
+
+        <div class="grid">
+            <?php if (count($donaciones) > 0): ?>
+                <?php foreach ($donaciones as $item): ?>
+                    <div class="card">
+                        <span class="badge"><?= htmlspecialchars($item['categoria']) ?></span>
+                        <h3><?= htmlspecialchars($item['producto']) ?></h3>
+                        <p><strong>Cantidad:</strong> <?= htmlspecialchars($item['cantidad']) ?></p>
+                        <p><strong>Vence:</strong> <?= htmlspecialchars($item['fecha_vencimiento']) ?></p>
+                        
+                        <form method="POST">
+                            <input type="hidden" name="id_donacion" value="<?= $item['id'] ?>">
+                            <button type="submit" class="btn">Solicitar ahora</button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p>No hay alimentos disponibles por el momento.</p>
+            <?php endif; ?>
+        </div>
     </div>
+
 </body>
 </html>
