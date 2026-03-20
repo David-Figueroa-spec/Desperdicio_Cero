@@ -1,39 +1,43 @@
-
 <?php
 session_start();
+
+// Si ya tiene sesión, no tiene sentido que se registre de nuevo
 if(isset($_SESSION['session_user_id'])){
     header('Location: main.php');
     exit();
 }
-// Paso 1. Obtener la conexión a la base de datos
+
 require('../config/database.php');
 
-// Paso 2. Capturar datos del formulario
-// Usamos el operador ?? para evitar errores si un campo no existe para ciertos roles
-$rol = $_POST['user_role'] ?? 'jugador';
-$e_mail = trim($_POST['email']);
-$p_wd = trim($_POST['passwd']);
+// Capturar datos con limpieza básica
+$rol            = $_POST['user_role'] ?? 'jugador';
+$e_mail         = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
+$p_wd           = $_POST['passwd'] ?? '';
 
-// Campos específicos según el rol
+// Campos opcionales según el formulario
 $nombre_entidad = $_POST['empresa'] ?? $_POST['org'] ?? null;
-$f_name = $_POST['fname'] ?? null; // Persona de contacto
-$m_number = $_POST['mnumber'] ?? null;
-$tipo_inst = $_POST['tipo'] ?? null;
-$u_name = $_POST['username'] ?? null;
+$f_name         = $_POST['fname'] ?? null; 
+$m_number       = $_POST['mnumber'] ?? null;
+$tipo_inst      = $_POST['tipo'] ?? null;
+$u_name         = $_POST['username'] ?? null;
 
-$url_photo = "user_default.png";
+// Validar que el email y la contraseña no estén vacíos
+if(empty($e_mail) || empty($p_wd)) {
+    echo "<script>alert('Email y contraseña son obligatorios'); window.location.href='signup.html';</script>";
+    exit();
+}
 
-// Encriptación segura (sustituye a md5)
+// Encriptación segura
 $ecn_pass = password_hash($p_wd, PASSWORD_DEFAULT);
 
 // Paso 3. Verificar si el email ya existe
 $check_email = "SELECT email FROM usuarios WHERE email = $1 LIMIT 1";
 $res_check = pg_query_params($conn_supa, $check_email, array($e_mail));
 
-if(pg_num_rows($res_check) > 0){
-    echo "<script>alert('¡El usuario ya existe!'); window.location.href='signup.html';</script>";
+if($res_check && pg_num_rows($res_check) > 0){
+    echo "<script>alert('¡El correo ya está registrado!'); window.location.href='signup.html';</script>";
 } else {
-    // Paso 4. Crear la consulta de inserción con los campos de tu tabla 'usuarios'
+    // Paso 4. Consulta de inserción
     $query = "INSERT INTO usuarios (
         user_role, 
         email, 
@@ -45,7 +49,6 @@ if(pg_num_rows($res_check) > 0){
         username
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
 
-    // Paso 5. Ejecutar la consulta de forma segura
     $params = array(
         $rol, 
         $e_mail, 
@@ -59,11 +62,12 @@ if(pg_num_rows($res_check) > 0){
     
     $res = pg_query_params($conn_supa, $query, $params);
 
-    // Paso 6. Validar resultado
     if($res){
         echo "<script>alert('¡Registro exitoso! Ya puedes iniciar sesión.'); window.location.href='signin.html';</script>";
     } else {
-        echo "Error en el servidor: " . pg_last_error($conn_supa);
+        // Log del error para depuración (puedes quitar el pg_last_error en producción)
+        error_log("Error en registro: " . pg_last_error($conn_supa));
+        echo "<script>alert('Hubo un error en el servidor. Inténtalo más tarde.'); window.location.href='signup.html';</script>";
     }
 }
 ?>
