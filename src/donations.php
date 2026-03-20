@@ -2,6 +2,17 @@
 // 1. CONFIGURACIÓN Y LÓGICA (El "Cerebro")
 include("../config/database.php");
 
+try {
+    $test = $pdo->query("SELECT id, producto, estado, LOWER(estado) as estado_lower FROM donaciones");
+    $rows = $test->fetchAll(PDO::FETCH_ASSOC);
+    echo "<pre>";
+    print_r($rows);
+    echo "</pre>";
+} catch (PDOException $e) {
+    echo "Error debug: " . $e->getMessage();
+}
+die();
+
 // Verificación de seguridad por si la conexión PDO falla
 if (!isset($pdo) || $pdo === null) {
     die("Error: No se pudo establecer la conexión PDO a la base de datos.");
