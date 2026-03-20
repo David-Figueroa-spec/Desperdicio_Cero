@@ -21,4 +21,15 @@ if(!$conn_supa){
 } else {
     // echo "Conexión exitosa a la base de datos";
 }
+
+try {
+    $pdo = new PDO(
+        "pgsql:host=$supa_host;port=$supa_port;dbname=$supa_dbname",
+        $supa_user,
+        $supa_password
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Error de conexión PDO: " . $e->getMessage());
+}
 ?>

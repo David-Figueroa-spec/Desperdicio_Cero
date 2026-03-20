@@ -2,6 +2,11 @@
 // 1. CONFIGURACIÓN Y LÓGICA (El "Cerebro")
 include("../config/database.php");
 
+// Verificación de seguridad por si la conexión PDO falla
+if (!isset($pdo) || $pdo === null) {
+    die("Error: No se pudo establecer la conexión PDO a la base de datos.");
+}
+
 // Lógica de actualización cuando alguien hace clic en "Solicitar"
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_donacion'])) {
     $id = (int)$_POST['id_donacion'];
@@ -33,23 +38,20 @@ try {
     <title>Donaciones | ReAprovecha</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* Estilos modernos y limpios */
         :root { --verde: #2ecc71; --oscuro: #2c3e50; --gris: #f4f7f6; }
         body { font-family: 'Poppins', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: auto; }
         h1 { text-align: center; color: var(--oscuro); }
         
-        /* Grid de Tarjetas */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid var(--verde); }
         
-        /* Detalles */
         .badge { background: #e8f5e9; color: #27ae60; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: 600; }
         .btn { background: var(--verde); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 15px; }
         .btn:hover { background: #27ae60; }
         
-        /* Mensajes */
         .msg { padding: 15px; background: #d4edda; color: #155724; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .msg-error { padding: 15px; background: #f8d7da; color: #721c24; border-radius: 8px; margin-bottom: 20px; text-align: center; }
     </style>
 </head>
 <body>
@@ -57,8 +59,12 @@ try {
     <div class="container">
         <h1>🍎 Alimentos Disponibles</h1>
 
-        <?php if(isset($_GET['success'])): ?>
+        <?php if (isset($_GET['success'])): ?>
             <div class="msg">✅ ¡Solicitud enviada! El alimento está en camino.</div>
+        <?php endif; ?>
+
+        <?php if (isset($error_msg)): ?>
+            <div class="msg-error">❌ <?= htmlspecialchars($error_msg) ?></div>
         <?php endif; ?>
 
         <div class="grid">
@@ -77,7 +83,7 @@ try {
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <p>No hay alimentos disponibles por el momento.</p>
+                <p style="text-align:center; color:#666;">No hay alimentos disponibles por el momento.</p>
             <?php endif; ?>
         </div>
     </div>
