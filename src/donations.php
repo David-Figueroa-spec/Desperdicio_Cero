@@ -11,7 +11,7 @@ if (!isset($pdo) || $pdo === null) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_donacion'])) {
     $id = (int)$_POST['id_donacion'];
     try {
-        $query = "UPDATE donaciones SET estado = 'En camino' WHERE id = :id AND estado = 'Disponible'";
+        $query = "UPDATE donaciones SET estado = 'En camino' WHERE id = :id AND estado = 'disponible'";
         $stmt = $pdo->prepare($query);
         $stmt->execute(['id' => $id]);
         header("Location: donations.php?success=1");
