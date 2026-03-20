@@ -337,7 +337,7 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
             <h1>Bienvenido, <em><?php echo htmlspecialchars($fullname); ?></em></h1>
             <p>Gracias por reducir el desperdicio en Pasto 🌱</p>
         </div>
-        <a href="add_donation.html" class="btn btn-orange">+ Registrar Donación</a>
+        <a href="register_donations" class="btn btn-orange">+ Registrar Donación</a>
     </div>
 
     <div class="stats-grid">
@@ -423,10 +423,10 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         <a href="donations.php" class="btn btn-green" style="flex: 1; justify-content: center; min-width: 160px;">
             🟢 Alimentos disponibles
         </a>
-        <a href="orders.html" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">
+        <a href="orders.php" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">
             📦 Mis pedidos
         </a>
-        <a href="help.html" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">
+        <a href="help.php" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">
             🤝 Personas ayudadas
         </a>
     </div>
