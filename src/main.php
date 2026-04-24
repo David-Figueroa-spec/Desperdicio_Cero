@@ -360,10 +360,6 @@ if ($role === 'jugador') {
         </div>
     </div>
     <div class="welcome-bar" style="--role-color:#fb923c;">
-    <div>
-        <h1>Bienvenido, <em><?php echo htmlspecialchars($fullname); ?></em></h1>
-        <p>Gracias por reducir el desperdicio en Pasto 🌱</p>
-    </div>
 </div>
 
     <!-- Stats reales desde la BD -->
