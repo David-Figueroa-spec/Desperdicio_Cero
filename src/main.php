@@ -354,8 +354,21 @@ if ($role === 'jugador') {
             <h1>Bienvenido, <em><?php echo htmlspecialchars($fullname); ?></em></h1>
             <p>Gracias por reducir el desperdicio en Pasto 🌱</p>
         </div>
+        <div class="actions">
+            <button class="btn btn-ghost" onclick="toggleHelp()">❓ Cómo funciona</button>
+            <a href="register_donations.php" class="btn btn-orange">+ Registrar Donación</a>
+        </div>
+    </div>
+    <div class="welcome-bar" style="--role-color:#fb923c;">
+    <div>
+        <h1>Bienvenido, <em><?php echo htmlspecialchars($fullname); ?></em></h1>
+        <p>Gracias por reducir el desperdicio en Pasto 🌱</p>
+    </div>
+    <div class="actions">
+        <button class="btn btn-ghost" onclick="toggleHelp()">❓ Cómo funciona</button>
         <a href="register_donations.php" class="btn btn-orange">+ Registrar Donación</a>
     </div>
+</div>
 
     <!-- Stats reales desde la BD -->
     <div class="stats-grid">
@@ -612,5 +625,66 @@ if ($role === 'jugador') {
 <?php endif; ?>
 
 </div><!-- /container -->
+<!-- ══ MODAL DE AYUDA DONADOR ══ -->
+<div id="help-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.60);z-index:999;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#0f1e12;border:1px solid rgba(74,222,128,0.18);border-radius:20px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;padding:2rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+      <div>
+        <p style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:4px;">Instructivo</p>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:1.4rem;font-weight:400;color:#f0fdf4;margin:0;">Cómo donar alimentos</h2>
+      </div>
+      <button onclick="closeHelp()" style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#9ca3af;font-size:18px;cursor:pointer;">×</button>
+    </div>
+    <div id="help-step-content"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid rgba(74,222,128,0.08);">
+      <button id="help-prev" onclick="helpStep(-1)" style="padding:9px 18px;border-radius:100px;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#d1d5db;cursor:pointer;">← Anterior</button>
+      <span id="help-counter" style="font-size:12px;color:#6b7280;"></span>
+      <button id="help-next" onclick="helpStep(1)" style="padding:9px 18px;border-radius:100px;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;background:#fb923c;color:white;border:none;cursor:pointer;">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const helpSteps = [
+  { n:'1', color:'#fb923c', title:'Inicia sesión con tu cuenta de donador', desc:'Accede con tu correo y contraseña seleccionando el rol <strong style="color:#fb923c">Donador</strong>. Tu panel personalizado se cargará automáticamente con tus estadísticas.', tip:'Solo los usuarios con rol donador pueden registrar alimentos en la plataforma.' },
+  { n:'2', color:'#facc15', title:'Haz clic en "+ Registrar Donación"', desc:'En la parte superior de tu panel encontrarás el botón naranja <strong style="color:#fb923c">+ Registrar Donación</strong>. Al pulsarlo serás llevado al formulario de registro.', tip:'Puedes registrar varias donaciones distintas en el mismo día sin ningún límite.' },
+  { n:'3', color:'#4ade80', title:'Completa los datos del alimento', desc:'Rellena: <strong style="color:#e5e7eb">nombre del producto</strong>, <strong style="color:#e5e7eb">cantidad</strong> en unidades o paquetes, <strong style="color:#e5e7eb">categoría</strong> y <strong style="color:#e5e7eb">fecha de vencimiento</strong>. Opcionalmente agrega una nota sobre el estado del empaque.', tip:'No se permiten fechas de vencimiento pasadas — el sistema lo valida automáticamente.' },
+  { n:'4', color:'#a78bfa', title:'Envía el formulario', desc:'Haz clic en <strong style="color:#fb923c">Registrar Alimento</strong>. La donación quedará guardada con estado <em style="color:#4ade80">Disponible</em> y será visible para todos los receptores registrados.', tip:'Verás una confirmación en pantalla si el registro fue exitoso.' },
+  { n:'5', color:'#4ade80', title:'Haz seguimiento desde tu panel', desc:'En el <strong style="color:#e5e7eb">Historial de donaciones</strong> puedes ver el estado de cada alimento:<br><br><span style="color:#4ade80">● Disponible</span> — nadie lo ha solicitado aún.<br><span style="color:#facc15">● En camino</span> — un receptor lo solicitó.<br><span style="color:#9ca3af">● Entregado</span> — la entrega fue completada.', tip:'Los contadores del panel (total kg, donaciones activas) se actualizan en tiempo real.' }
+];
+
+let helpCurrent = 0;
+
+function renderHelp() {
+  const s = helpSteps[helpCurrent];
+  document.getElementById('help-step-content').innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:1.25rem;">
+      <div style="width:40px;height:40px;border-radius:50%;background:${s.color}20;border:1.5px solid ${s.color}60;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;color:${s.color};flex-shrink:0;">${s.n}</div>
+      <div>
+        <h3 style="font-family:'DM Serif Display',serif;font-size:1.05rem;font-weight:400;color:#f0fdf4;margin:0 0 8px;">${s.title}</h3>
+        <p style="font-size:14px;color:#d1d5db;line-height:1.7;margin:0;">${s.desc}</p>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border-left:2px solid ${s.color};padding:10px 14px;border-radius:0 10px 10px 0;font-size:13px;color:#9ca3af;">
+      <span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:${s.color};">Nota &nbsp;</span>${s.tip}
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;margin-top:1.25rem;">
+      ${helpSteps.map((_,i) => `<div style="width:${i===helpCurrent?'20px':'6px'};height:6px;border-radius:100px;background:${i===helpCurrent?s.color:'rgba(255,255,255,.1)'};transition:all .2s;"></div>`).join('')}
+    </div>`;
+  document.getElementById('help-counter').textContent = `Paso ${helpCurrent+1} de ${helpSteps.length}`;
+  document.getElementById('help-prev').style.opacity = helpCurrent===0 ? '0.3' : '1';
+  document.getElementById('help-prev').disabled = helpCurrent===0;
+  const nb = document.getElementById('help-next');
+  if (helpCurrent === helpSteps.length-1) { nb.textContent='Entendido ✓'; nb.onclick=closeHelp; }
+  else { nb.textContent='Siguiente →'; nb.onclick=()=>helpStep(1); }
+}
+
+function helpStep(d) { helpCurrent=Math.max(0,Math.min(helpSteps.length-1,helpCurrent+d)); renderHelp(); }
+function toggleHelp() { document.getElementById('help-overlay').style.display='flex'; renderHelp(); }
+function closeHelp()  { document.getElementById('help-overlay').style.display='none'; helpCurrent=0; }
+
+document.getElementById('help-overlay').addEventListener('click', function(e){ if(e.target===this) closeHelp(); });
+</script>
+
 </body>
 </html>
