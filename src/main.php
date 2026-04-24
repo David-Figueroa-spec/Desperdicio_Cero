@@ -1,301 +1,318 @@
 <?php
 session_start();
-if(!isset($_SESSION['session_user_id'])){
+if (!isset($_SESSION['session_user_id'])) {
     header('Location: signin.html');
     exit();
 }
 
+$user_id  = (int)$_SESSION['session_user_id'];
 $fullname = $_SESSION['session_user_fullname'] ?? 'Sin nombre';
 $contacto = $_SESSION['session_user_contact']  ?? '';
 $role     = $_SESSION['session_user_role']     ?? 'invitado';
-?>
 
+require('../config/database.php');
+
+// ════════════════════════════════════════════════
+// Función auxiliar: título de nivel para jugadores
+// ════════════════════════════════════════════════
+function getTituloNivel(int $nivel): string {
+    if ($nivel <= 3)  return 'Aprendiz Verde';
+    if ($nivel <= 6)  return 'Guardián del Sabor';
+    if ($nivel <= 10) return 'Héroe Sostenible';
+    return 'Leyenda Cero Residuos';
+}
+
+// ════════════════════════════════════════════════
+// DATOS PARA: DONADOR
+// ════════════════════════════════════════════════
+$st = []; $historial = [];
+if ($role === 'donador') {
+
+    // Stats generales
+    $stmt = $pdo->prepare("
+        SELECT
+            COUNT(*)                                                          AS total,
+            COALESCE(SUM(cantidad), 0)                                        AS total_kg,
+            COUNT(CASE WHEN LOWER(estado) = 'disponible' THEN 1 END)         AS activas,
+            COUNT(CASE WHEN LOWER(estado) = 'entregado'  THEN 1 END)         AS entregadas
+        FROM donaciones
+        WHERE donante_id = ?
+    ");
+    $stmt->execute([$user_id]);
+    $st = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total'=>0,'total_kg'=>0,'activas'=>0,'entregadas'=>0];
+
+    // Historial reciente con nombre del receptor
+    $stmt2 = $pdo->prepare("
+        SELECT
+            d.producto,
+            d.cantidad,
+            TO_CHAR(d.fecha_registro, 'DD Mon YYYY')  AS fecha,
+            d.estado,
+            COALESCE(u.nombre_entidad, '—')           AS receptor
+        FROM donaciones d
+        LEFT JOIN usuarios u ON u.id = d.receptor_id
+        WHERE d.donante_id = ?
+        ORDER BY d.fecha_registro DESC
+        LIMIT 8
+    ");
+    $stmt2->execute([$user_id]);
+    $historial = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ════════════════════════════════════════════════
+// DATOS PARA: RECEPTOR
+// ════════════════════════════════════════════════
+$disponibles = [];
+if ($role === 'receptor') {
+
+    // Stats del receptor
+    $stmt = $pdo->prepare("
+        SELECT
+            COUNT(CASE WHEN LOWER(estado) = 'entregado' THEN 1 END)          AS recibidos,
+            COUNT(CASE WHEN LOWER(estado) = 'en camino' THEN 1 END)          AS activas,
+            COALESCE(SUM(CASE WHEN LOWER(estado) = 'entregado'
+                              THEN cantidad ELSE 0 END), 0)                   AS kg_recibidos
+        FROM donaciones
+        WHERE receptor_id = ?
+    ");
+    $stmt->execute([$user_id]);
+    $st = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['recibidos'=>0,'activas'=>0,'kg_recibidos'=>0];
+
+    // Últimas 3 donaciones disponibles (preview rápido)
+    $stmt2 = $pdo->query("
+        SELECT producto, cantidad, categoria,
+               TO_CHAR(fecha_vencimiento, 'DD Mon YYYY') AS vence
+        FROM donaciones
+        WHERE LOWER(estado) = 'disponible'
+        ORDER BY fecha_vencimiento ASC
+        LIMIT 3
+    ");
+    $disponibles = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ════════════════════════════════════════════════
+// DATOS PARA: JUGADOR
+// ════════════════════════════════════════════════
+$jug_stats = []; $ranking = []; $mi_posicion = 0; $retos_activos = []; $retos_completados_count = 0;
+if ($role === 'jugador') {
+
+    // Estadísticas del jugador
+    try {
+        $stmt = $pdo->prepare("SELECT xp, nivel, semillas FROM usuarios WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $jug_stats = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['xp'=>0,'nivel'=>1,'semillas'=>0];
+    } catch (PDOException $e) {
+        $jug_stats = ['xp'=>0, 'nivel'=>1, 'semillas'=>0];
+    }
+
+    $xp       = (int)$jug_stats['xp'];
+    $nivel    = (int)$jug_stats['nivel'];
+    $semillas = (int)$jug_stats['semillas'];
+    $titulo   = getTituloNivel($nivel);
+
+    // XP dentro del nivel actual (1000 XP por nivel)
+    $xp_en_nivel       = $xp % 1000;
+    $xp_pct            = $xp_en_nivel / 10; // % hacia el siguiente nivel
+
+    // Retos completados (contador)
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM reto_completados WHERE jugador_id = ? AND completado = TRUE");
+        $stmt->execute([$user_id]);
+        $retos_completados_count = (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        $retos_completados_count = 0;
+    }
+
+    // Ranking top 5
+    try {
+        $stmt = $pdo->query("
+            SELECT
+                COALESCE(nombre_entidad, username, 'Anónimo') AS nombre,
+                xp,
+                RANK() OVER (ORDER BY xp DESC)                AS posicion
+            FROM usuarios
+            WHERE user_role = 'jugador'
+            ORDER BY xp DESC
+            LIMIT 5
+        ");
+        $ranking = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Posición del usuario actual
+        $stmt2 = $pdo->prepare("
+            SELECT posicion FROM (
+                SELECT id, RANK() OVER (ORDER BY xp DESC) AS posicion
+                FROM usuarios WHERE user_role = 'jugador'
+            ) t WHERE id = ?
+        ");
+        $stmt2->execute([$user_id]);
+        $mi_posicion = (int)($stmt2->fetchColumn() ?: 0);
+    } catch (PDOException $e) {
+        $ranking = []; $mi_posicion = 0;
+    }
+
+    // Retos activos (en progreso, no completados)
+    try {
+        $stmt = $pdo->prepare("
+            SELECT
+                r.titulo, r.descripcion, r.icono,
+                r.xp_recompensa, r.meta_valor,
+                rc.progreso
+            FROM reto_completados rc
+            JOIN retos r ON r.id = rc.reto_id
+            WHERE rc.jugador_id = ? AND rc.completado = FALSE
+            ORDER BY rc.id ASC
+            LIMIT 3
+        ");
+        $stmt->execute([$user_id]);
+        $retos_activos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $retos_activos = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Misión Desperdicio Cero</title>
-    <link rel="icon" type="image/png" href="icon/market_main.png">
+    <title>Dashboard – Misión Desperdicio Cero</title>
+    <link rel="icon" type="image/png" href="icons/market_main.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            min-height: 100vh;
-            background: #0a1a0f;
-            color: #e5e7eb;
+        :root {
+            --bg:      #0a1a0f;
+            --surface: rgba(15,30,18,0.85);
+            --border:  rgba(74,222,128,0.10);
+            --green:   #4ade80;
+            --orange:  #fb923c;
+            --yellow:  #facc15;
+            --purple:  #a78bfa;
+            --text:    #e5e7eb;
+            --muted:   #6b7280;
+            --head:    #f0fdf4;
         }
 
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            pointer-events: none;
-            filter: blur(80px);
-            z-index: 0;
-        }
-        .orb-1 {
-            width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(74,222,128,0.10) 0%, transparent 70%);
-            top: -100px; left: -120px;
-        }
-        .orb-2 {
-            width: 350px; height: 350px;
-            background: radial-gradient(circle, rgba(251,146,60,0.08) 0%, transparent 70%);
-            bottom: -80px; right: -80px;
-        }
-        .bg-grid {
-            position: fixed; inset: 0;
-            background-image:
-                linear-gradient(rgba(74,222,128,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(74,222,128,0.04) 1px, transparent 1px);
-            background-size: 60px 60px;
-            pointer-events: none; z-index: 0;
-        }
+        body { font-family: 'DM Sans', sans-serif; min-height: 100vh; background: var(--bg); color: var(--text); }
 
-        header {
-            position: sticky; top: 0; z-index: 100;
-            background: rgba(10,26,15,0.90);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(74,222,128,0.10);
-            padding: 0.9rem 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .orb { position: fixed; border-radius: 50%; pointer-events: none; filter: blur(80px); z-index: 0; }
+        .orb-1 { width:500px;height:500px; background:radial-gradient(circle,rgba(74,222,128,.10) 0%,transparent 70%); top:-100px;left:-120px; }
+        .orb-2 { width:350px;height:350px; background:radial-gradient(circle,rgba(251,146,60,.08) 0%,transparent 70%); bottom:-80px;right:-80px; }
+        .bg-grid { position:fixed;inset:0; background-image:linear-gradient(rgba(74,222,128,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,.04) 1px,transparent 1px); background-size:60px 60px; pointer-events:none;z-index:0; }
 
-        .logo {
-            display: flex; align-items: center; gap: 10px;
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.05rem; font-weight: 400;
-            color: #f0fdf4; text-decoration: none;
-        }
-        .logo svg { width: 30px; height: 30px; flex-shrink: 0; }
+        /* ── HEADER ── */
+        header { position:sticky;top:0;z-index:100; background:rgba(10,26,15,.90); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); padding:.9rem 5%; display:flex;justify-content:space-between;align-items:center; }
+        .logo { display:flex;align-items:center;gap:10px; font-family:'DM Serif Display',serif; font-size:1.05rem;font-weight:400; color:var(--head);text-decoration:none; }
+        .logo svg { width:30px;height:30px;flex-shrink:0; }
+        .user-nav { display:flex;align-items:center;gap:16px;font-size:13px; }
+        .user-nav span { color:var(--muted); }
+        .user-nav strong { color:var(--head);font-weight:500; }
+        .role-badge { padding:3px 10px;border-radius:100px;font-size:11px;font-weight:500;letter-spacing:.05em;text-transform:uppercase; }
+        .badge-donador  { background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.3);color:var(--orange); }
+        .badge-receptor { background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:var(--green); }
+        .badge-jugador  { background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:var(--purple); }
+        .logout-link { color:rgba(251,146,60,.6);text-decoration:none;font-size:13px;font-weight:500;transition:color .2s; }
+        .logout-link:hover { color:var(--orange); }
 
-        .user-nav { display: flex; align-items: center; gap: 16px; font-size: 13px; }
-        .user-nav span { color: #9ca3af; }
-        .user-nav strong { color: #f0fdf4; font-weight: 500; }
+        /* ── LAYOUT ── */
+        .container { position:relative;z-index:2; padding:36px 5%;max-width:1100px;margin:auto; animation:fadeUp .7s ease both; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
-        .role-badge {
-            padding: 3px 10px; border-radius: 100px;
-            font-size: 11px; font-weight: 500;
-            letter-spacing: 0.05em; text-transform: uppercase;
-        }
-        .badge-donador  { background: rgba(251,146,60,0.12); border: 1px solid rgba(251,146,60,0.3); color: #fb923c; }
-        .badge-receptor { background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; }
-        .badge-jugador  { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.3); color: #a78bfa; }
+        /* ── WELCOME BAR ── */
+        .welcome-bar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:32px; }
+        .welcome-bar h1 { font-family:'DM Serif Display',serif;font-size:clamp(1.6rem,3vw,2.2rem);font-weight:400;color:var(--head);letter-spacing:-.02em;line-height:1.1; }
+        .welcome-bar h1 em { font-style:italic;color:var(--role-color,var(--green)); }
+        .welcome-bar p { font-size:13px;color:var(--muted);font-weight:300;margin-top:4px; }
 
-        .logout-link {
-            color: rgba(251,146,60,0.6); text-decoration: none;
-            font-size: 13px; font-weight: 500;
-            transition: color 0.2s;
-        }
-        .logout-link:hover { color: #fb923c; }
+        /* ── CARDS ── */
+        .card { background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:20px;padding:24px 28px;transition:border-color .2s; margin-bottom:24px; }
+        .card:hover { border-color:rgba(74,222,128,.2); }
+        .card-title { font-family:'DM Serif Display',serif;font-size:1.1rem;font-weight:400;color:var(--head);margin-bottom:16px;letter-spacing:-.01em; }
 
-        .container {
-            position: relative; z-index: 2;
-            padding: 36px 5%; max-width: 1100px;
-            margin: auto;
-            animation: fadeUp 0.7s ease both;
-        }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
+        /* ── STATS ── */
+        .stats-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px; }
+        .stat-box { background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;position:relative;overflow:hidden;transition:transform .2s,border-color .2s; }
+        .stat-box:hover { transform:translateY(-2px);border-color:rgba(74,222,128,.22); }
+        .stat-box::after { content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--accent,var(--green));border-radius:0 0 16px 16px; }
+        .stat-box h3 { font-family:'DM Serif Display',serif;font-size:1.9rem;font-weight:400;color:var(--accent,var(--green));letter-spacing:-.02em;margin-bottom:4px; }
+        .stat-box p { font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:500; }
 
-        .welcome-bar {
-            display: flex; align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap; gap: 16px;
-            margin-bottom: 32px;
-        }
-        .welcome-bar h1 {
-            font-family: 'DM Serif Display', serif;
-            font-size: clamp(1.6rem, 3vw, 2.2rem);
-            font-weight: 400; color: #f0fdf4;
-            letter-spacing: -0.02em;
-            line-height: 1.1;
-        }
-        .welcome-bar h1 em { font-style: italic; color: var(--role-color, #4ade80); }
-        .welcome-bar p { font-size: 13px; color: #6b7280; font-weight: 300; margin-top: 4px; }
+        /* ── BUTTONS ── */
+        .btn { display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;border:none;cursor:pointer;transition:all .25s ease;text-decoration:none; }
+        .btn-orange { background:var(--orange);color:white; }
+        .btn-orange:hover { background:#f97316;transform:translateY(-1px);box-shadow:0 8px 24px rgba(251,146,60,.35); }
+        .btn-green  { background:var(--green);color:var(--bg); }
+        .btn-green:hover  { background:#22c55e;transform:translateY(-1px);box-shadow:0 8px 24px rgba(74,222,128,.3); }
+        .btn-purple { background:var(--purple);color:var(--bg); }
+        .btn-purple:hover { background:#8b5cf6;color:white;transform:translateY(-1px);box-shadow:0 8px 24px rgba(167,139,250,.3); }
+        .btn-ghost  { background:transparent;border:1px solid rgba(255,255,255,.12);color:#d1fae5; }
+        .btn-ghost:hover { background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.25);transform:translateY(-1px); }
+        .actions { display:flex;gap:12px;flex-wrap:wrap; }
 
-        .card {
-            background: rgba(15,30,18,0.85);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(74,222,128,0.10);
-            border-radius: 20px;
-            padding: 24px 28px;
-            transition: border-color 0.2s;
-        }
-        .card:hover { border-color: rgba(74,222,128,0.2); }
+        /* ── TABLE ── */
+        .table-wrap { overflow-x:auto; }
+        table { width:100%;border-collapse:collapse;font-size:13px; }
+        thead th { text-align:left;padding:10px 14px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid rgba(74,222,128,.08); }
+        tbody tr { transition:background .15s; }
+        tbody tr:hover { background:rgba(74,222,128,.04); }
+        tbody td { padding:12px 14px;color:#d1d5db;border-bottom:1px solid rgba(255,255,255,.04); }
 
-        .card-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.1rem; font-weight: 400;
-            color: #f0fdf4; margin-bottom: 16px;
-            letter-spacing: -0.01em;
-        }
+        /* ── TAGS ── */
+        .tag { display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:500; }
+        .tag-disponible { background:rgba(74,222,128,.12);color:var(--green); }
+        .tag-camino     { background:rgba(250,204,21,.12);color:var(--yellow); }
+        .tag-entregado  { background:rgba(156,163,175,.12);color:#9ca3af; }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px; margin-bottom: 24px;
-        }
-        .stat-box {
-            background: rgba(15,30,18,0.85);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(74,222,128,0.10);
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            position: relative; overflow: hidden;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        .stat-box:hover { transform: translateY(-2px); border-color: rgba(74,222,128,0.22); }
-        .stat-box::after {
-            content: '';
-            position: absolute; bottom: 0; left: 0; right: 0;
-            height: 3px;
-            background: var(--accent, #4ade80);
-            border-radius: 0 0 16px 16px;
-        }
-        .stat-box h3 {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.9rem; font-weight: 400;
-            color: var(--accent, #4ade80);
-            letter-spacing: -0.02em; margin-bottom: 4px;
-        }
-        .stat-box p { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }
+        /* ── TWO COLS ── */
+        .two-col { display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px; }
+        @media(max-width:640px){ .two-col{grid-template-columns:1fr;} }
 
-        .btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 12px 22px; border-radius: 100px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 12px; font-weight: 500;
-            letter-spacing: 0.06em; text-transform: uppercase;
-            border: none; cursor: pointer;
-            transition: all 0.25s ease; text-decoration: none;
-        }
-        .btn-orange { background: #fb923c; color: white; }
-        .btn-orange:hover { background: #f97316; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(251,146,60,0.35); }
-        .btn-green { background: #4ade80; color: #0a1a0f; }
-        .btn-green:hover { background: #22c55e; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(74,222,128,0.3); }
-        .btn-purple { background: #a78bfa; color: #0a1a0f; }
-        .btn-purple:hover { background: #8b5cf6; color: white; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(167,139,250,0.3); }
-        .btn-ghost {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.12);
-            color: #d1fae5;
-        }
-        .btn-ghost:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.25); transform: translateY(-1px); }
+        /* ── PROGRESS ── */
+        .progress-wrap { margin-bottom:14px; }
+        .progress-label { display:flex;justify-content:space-between;font-size:12px;color:#9ca3af;margin-bottom:6px; }
+        .progress-bar { height:6px;background:rgba(255,255,255,.06);border-radius:100px;overflow:hidden; }
+        .progress-fill { height:100%;border-radius:100px;background:var(--fill-color,var(--purple));transition:width 1s ease; }
 
-        .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        /* ── RANKING ── */
+        .ranking-list { display:flex;flex-direction:column;gap:10px; }
+        .ranking-item { display:flex;align-items:center;gap:14px;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:12px; }
+        .rank-num { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0; }
+        .rank-1 { background:rgba(250,204,21,.15);color:var(--yellow); }
+        .rank-2 { background:rgba(156,163,175,.15);color:#9ca3af; }
+        .rank-3 { background:rgba(251,146,60,.15);color:var(--orange); }
+        .rank-other { background:rgba(255,255,255,.05);color:var(--muted); }
+        .rank-name { flex:1;font-size:13px;color:#d1d5db; }
+        .rank-pts  { font-size:13px;font-weight:500;color:var(--purple); }
 
-        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-        @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+        /* ── RETOS ── */
+        .retos-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px; }
+        .reto-card { background:rgba(255,255,255,.03);border:1px solid rgba(167,139,250,.12);border-radius:14px;padding:18px;transition:border-color .2s,transform .2s; }
+        .reto-card:hover { border-color:rgba(167,139,250,.3);transform:translateY(-2px); }
+        .reto-icon { font-size:1.6rem;margin-bottom:10px;display:block; }
+        .reto-card h4 { font-size:14px;font-weight:500;color:var(--head);margin-bottom:4px; }
+        .reto-card p  { font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px; }
+        .reto-pts { font-size:11px;font-weight:500;color:var(--purple);text-transform:uppercase;letter-spacing:.06em; }
 
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        thead th {
-            text-align: left; padding: 10px 14px;
-            font-size: 11px; font-weight: 500;
-            text-transform: uppercase; letter-spacing: 0.07em;
-            color: #6b7280;
-            border-bottom: 1px solid rgba(74,222,128,0.08);
-        }
-        tbody tr { transition: background 0.15s; }
-        tbody tr:hover { background: rgba(74,222,128,0.04); }
-        tbody td { padding: 12px 14px; color: #d1d5db; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        /* ── DISPONIBLES PREVIEW ── */
+        .preview-list { display:flex;flex-direction:column;gap:10px; }
+        .preview-item { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;flex-wrap:wrap; }
+        .preview-item .info strong { display:block;font-size:14px;color:var(--head);font-weight:500; }
+        .preview-item .info span   { font-size:12px;color:var(--muted); }
 
-        .tag {
-            display: inline-block; padding: 3px 10px;
-            border-radius: 100px; font-size: 11px; font-weight: 500;
-        }
-        .tag-active  { background: rgba(74,222,128,0.12); color: #4ade80; }
-        .tag-pending { background: rgba(250,204,21,0.12); color: #facc15; }
-        .tag-done    { background: rgba(156,163,175,0.12); color: #9ca3af; }
+        /* ── DONATE BANNER ── */
+        .donate-banner { background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.18);border-radius:16px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:24px; }
+        .donate-banner p { font-size:14px;color:#d1d5db;font-weight:300;line-height:1.5; }
+        .donate-banner strong { color:var(--orange);font-weight:500; }
 
-        .donation-list { display: flex; flex-direction: column; gap: 12px; }
-        .donation-item {
-            display: flex; align-items: center;
-            justify-content: space-between; gap: 16px;
-            padding: 14px 18px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(74,222,128,0.08);
-            border-radius: 12px;
-            transition: border-color 0.2s, background 0.2s;
-            flex-wrap: wrap;
-        }
-        .donation-item:hover { border-color: rgba(74,222,128,0.2); background: rgba(74,222,128,0.04); }
-        .donation-item .info { flex: 1; min-width: 120px; }
-        .donation-item .info strong { display: block; font-size: 14px; color: #f0fdf4; font-weight: 500; margin-bottom: 2px; }
-        .donation-item .info span { font-size: 12px; color: #6b7280; }
+        /* ── NAV BUTTONS ── */
+        .nav-buttons { display:flex;gap:14px;flex-wrap:wrap;margin-bottom:28px;padding:20px 24px;background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:20px; }
+        .nav-buttons .btn { flex:1;justify-content:center;min-width:160px; }
 
-        .progress-wrap { margin-bottom: 8px; }
-        .progress-label {
-            display: flex; justify-content: space-between;
-            font-size: 12px; color: #9ca3af; margin-bottom: 6px;
-        }
-        .progress-bar {
-            height: 6px; background: rgba(255,255,255,0.06);
-            border-radius: 100px; overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%; border-radius: 100px;
-            background: var(--fill-color, #a78bfa);
-            transition: width 1s ease;
-        }
-
-        .ranking-list { display: flex; flex-direction: column; gap: 10px; }
-        .ranking-item {
-            display: flex; align-items: center; gap: 14px;
-            padding: 10px 14px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 12px;
-        }
-        .rank-num {
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 500; flex-shrink: 0;
-        }
-        .rank-1     { background: rgba(250,204,21,0.15); color: #facc15; }
-        .rank-2     { background: rgba(156,163,175,0.15); color: #9ca3af; }
-        .rank-3     { background: rgba(251,146,60,0.15); color: #fb923c; }
-        .rank-other { background: rgba(255,255,255,0.05); color: #6b7280; }
-        .rank-name { flex: 1; font-size: 13px; color: #d1d5db; }
-        .rank-pts  { font-size: 13px; font-weight: 500; color: #a78bfa; }
-
-        .retos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 14px;
-        }
-        .reto-card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(167,139,250,0.12);
-            border-radius: 14px; padding: 18px;
-            transition: border-color 0.2s, transform 0.2s;
-        }
-        .reto-card:hover { border-color: rgba(167,139,250,0.3); transform: translateY(-2px); }
-        .reto-icon { font-size: 1.6rem; margin-bottom: 10px; display: block; }
-        .reto-card h4 { font-size: 14px; font-weight: 500; color: #f0fdf4; margin-bottom: 4px; }
-        .reto-card p  { font-size: 12px; color: #6b7280; line-height: 1.5; margin-bottom: 12px; }
-        .reto-pts { font-size: 11px; font-weight: 500; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.06em; }
-
-        .donate-banner {
-            background: rgba(251,146,60,0.07);
-            border: 1px solid rgba(251,146,60,0.18);
-            border-radius: 16px; padding: 20px 24px;
-            display: flex; align-items: center;
-            justify-content: space-between; gap: 16px;
-            flex-wrap: wrap; margin-top: 24px;
-        }
-        .donate-banner p { font-size: 14px; color: #d1d5db; font-weight: 300; line-height: 1.5; }
-        .donate-banner strong { color: #fb923c; font-weight: 500; }
+        /* ── EMPTY STATE ── */
+        .empty { text-align:center;color:var(--muted);padding:32px;font-size:14px; }
     </style>
 </head>
 <body>
@@ -315,10 +332,10 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         Misión Desperdicio Cero
     </a>
     <div class="user-nav">
-        <span class="role-badge badge-<?php echo $role; ?>"><?php echo ucfirst($role); ?></span>
+        <span class="role-badge badge-<?php echo htmlspecialchars($role); ?>"><?php echo ucfirst(htmlspecialchars($role)); ?></span>
         <span>
-            <?php if($contacto): ?>
-                <?php echo htmlspecialchars($contacto); ?> · 
+            <?php if ($contacto): ?>
+                <?php echo htmlspecialchars($contacto); ?> &middot;
             <?php endif; ?>
             <strong><?php echo htmlspecialchars($fullname); ?></strong>
         </span>
@@ -328,11 +345,11 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
 
 <div class="container">
 
-<?php if ($role == 'donador'): ?>
+<?php if ($role === 'donador'): ?>
 <!-- ═══════════════════════════════════════════
      DASHBOARD DONADOR
 ═══════════════════════════════════════════ -->
-    <div class="welcome-bar" style="--role-color: #fb923c;">
+    <div class="welcome-bar" style="--role-color:#fb923c;">
         <div>
             <h1>Bienvenido, <em><?php echo htmlspecialchars($fullname); ?></em></h1>
             <p>Gracias por reducir el desperdicio en Pasto 🌱</p>
@@ -340,15 +357,29 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         <a href="register_donations.php" class="btn btn-orange">+ Registrar Donación</a>
     </div>
 
+    <!-- Stats reales desde la BD -->
     <div class="stats-grid">
-        <div class="stat-box" style="--accent: #fb923c;"><h3>42</h3><p>Total donaciones</p></div>
-        <div class="stat-box" style="--accent: #4ade80;"><h3>385 kg</h3><p>Alimentos donados</p></div>
-        <div class="stat-box" style="--accent: #facc15;"><h3>8</h3><p>Donaciones activas</p></div>
-        <div class="stat-box" style="--accent: #a78bfa;"><h3>120</h3><p>Personas beneficiadas</p></div>
+        <div class="stat-box" style="--accent:#fb923c;">
+            <h3><?php echo (int)$st['total']; ?></h3>
+            <p>Total donaciones</p>
+        </div>
+        <div class="stat-box" style="--accent:var(--green);">
+            <h3><?php echo number_format((float)$st['total_kg'], 0); ?> kg</h3>
+            <p>Alimentos donados</p>
+        </div>
+        <div class="stat-box" style="--accent:var(--yellow);">
+            <h3><?php echo (int)$st['activas']; ?></h3>
+            <p>Donaciones activas</p>
+        </div>
+        <div class="stat-box" style="--accent:var(--purple);">
+            <h3><?php echo (int)$st['entregadas']; ?></h3>
+            <p>Entregas completadas</p>
+        </div>
     </div>
 
-    <div class="card" style="margin-bottom: 24px;">
+    <div class="card">
         <div class="card-title">📋 Historial de donaciones</div>
+        <?php if (count($historial) > 0): ?>
         <div class="table-wrap">
             <table>
                 <thead>
@@ -361,84 +392,92 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
                     </tr>
                 </thead>
                 <tbody>
+                    <?php foreach ($historial as $d): ?>
+                    <?php
+                        $estado_lower = strtolower($d['estado']);
+                        $tag_class = match(true) {
+                            $estado_lower === 'disponible' => 'tag-disponible',
+                            $estado_lower === 'en camino'  => 'tag-camino',
+                            default                        => 'tag-entregado'
+                        };
+                    ?>
                     <tr>
-                        <td>Pan integral</td><td>20 kg</td><td>14 mar 2025</td>
-                        <td>Fundación Sol</td><td><span class="tag tag-active">Entregado</span></td>
+                        <td><?php echo htmlspecialchars($d['producto']); ?></td>
+                        <td><?php echo htmlspecialchars($d['cantidad']); ?></td>
+                        <td><?php echo htmlspecialchars($d['fecha']); ?></td>
+                        <td><?php echo htmlspecialchars($d['receptor']); ?></td>
+                        <td><span class="tag <?php echo $tag_class; ?>"><?php echo htmlspecialchars($d['estado']); ?></span></td>
                     </tr>
-                    <tr>
-                        <td>Lácteos variados</td><td>15 kg</td><td>12 mar 2025</td>
-                        <td>Comedor El Prado</td><td><span class="tag tag-pending">En camino</span></td>
-                    </tr>
-                    <tr>
-                        <td>Frutas de temporada</td><td>30 kg</td><td>10 mar 2025</td>
-                        <td>—</td><td><span class="tag tag-pending">Disponible</span></td>
-                    </tr>
-                    <tr>
-                        <td>Verduras mixtas</td><td>18 kg</td><td>05 mar 2025</td>
-                        <td>Fundación Sol</td><td><span class="tag tag-done">Completado</span></td>
-                    </tr>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
+        <?php else: ?>
+            <p class="empty">Aún no has registrado donaciones. ¡Empieza hoy! 🌿</p>
+        <?php endif; ?>
     </div>
 
-<?php elseif ($role == 'receptor'): ?>
+<?php elseif ($role === 'receptor'): ?>
 <!-- ═══════════════════════════════════════════
      DASHBOARD RECEPTOR
 ═══════════════════════════════════════════ -->
-    <div class="welcome-bar" style="--role-color: #4ade80;">
+    <div class="welcome-bar" style="--role-color:var(--green);">
         <div>
             <h1>Hola, <em><?php echo htmlspecialchars($fullname); ?></em></h1>
             <p>Estas son las donaciones disponibles para hoy 🧺</p>
         </div>
     </div>
 
+    <!-- Stats reales desde la BD -->
     <div class="stats-grid">
-        <div class="stat-box" style="--accent: #4ade80;">
-            <h3>38</h3>
-            <p>Alimentos recibidos</p>
+        <div class="stat-box" style="--accent:var(--green);">
+            <h3><?php echo (int)$st['recibidos']; ?></h3>
+            <p>Entregas recibidas</p>
         </div>
-        <div class="stat-box" style="--accent: #fb923c;">
-            <h3>850</h3>
-            <p>Personas ayudadas</p>
+        <div class="stat-box" style="--accent:var(--orange);">
+            <h3><?php echo number_format((float)$st['kg_recibidos'], 0); ?> kg</h3>
+            <p>Kg recibidos</p>
         </div>
-        <div class="stat-box" style="--accent: #facc15;">
-            <h3>3</h3>
-            <p>Solicitudes activas</p>
+        <div class="stat-box" style="--accent:var(--yellow);">
+            <h3><?php echo (int)$st['activas']; ?></h3>
+            <p>Pedidos en camino</p>
         </div>
     </div>
 
-    <!-- Botones de navegación -->
-    <div style="
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-        margin-bottom: 28px;
-        padding: 20px 24px;
-        background: rgba(15,30,18,0.85);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(74,222,128,0.10);
-        border-radius: 20px;
-    ">
-        <a href="donations.php" class="btn btn-green" style="flex: 1; justify-content: center; min-width: 160px;">
-            🟢 Alimentos disponibles
-        </a>
-        <a href="orders.php" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">
-            📦 Mis pedidos
-        </a>
-        <a href="help.php" class="btn btn-ghost" style="flex: 1; justify-content: center; min-width: 160px;">
-            🤝 Personas ayudadas
-        </a>
+    <div class="nav-buttons">
+        <a href="donations.php" class="btn btn-green">🟢 Alimentos disponibles</a>
+        <a href="orders.php"    class="btn btn-ghost">📦 Mis pedidos</a>
     </div>
+
+    <!-- Preview de donaciones disponibles -->
+    <?php if (count($disponibles) > 0): ?>
+    <div class="card">
+        <div class="card-title">⚡ Disponibles ahora</div>
+        <div class="preview-list">
+            <?php foreach ($disponibles as $d): ?>
+            <div class="preview-item">
+                <div class="info">
+                    <strong><?php echo htmlspecialchars($d['producto']); ?></strong>
+                    <span><?php echo htmlspecialchars($d['categoria']); ?> · <?php echo htmlspecialchars($d['cantidad']); ?> uds.</span>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:12px;color:var(--muted);">Vence <?php echo htmlspecialchars($d['vence']); ?></span><br>
+                    <a href="donations.php" class="btn btn-green" style="margin-top:8px;padding:8px 16px;font-size:11px;">Solicitar</a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
 <?php else: ?>
 <!-- ═══════════════════════════════════════════
      DASHBOARD JUGADOR
 ═══════════════════════════════════════════ -->
-    <div class="welcome-bar" style="--role-color: #a78bfa;">
+    <div class="welcome-bar" style="--role-color:var(--purple);">
         <div>
             <h1>¡Hola, <em><?php echo htmlspecialchars($fullname); ?></em>!</h1>
-            <p>Nivel 12 · Guardián del Sabor 🎮</p>
+            <p>Nivel <?php echo $nivel; ?> · <?php echo $titulo; ?> 🎮</p>
         </div>
         <div class="actions">
             <button class="btn btn-purple">🎮 Minijuegos</button>
@@ -446,83 +485,120 @@ $role     = $_SESSION['session_user_role']     ?? 'invitado';
         </div>
     </div>
 
+    <!-- Stats reales desde la BD -->
     <div class="stats-grid">
-        <div class="stat-box" style="--accent: #a78bfa;"><h3>Niv. 12</h3><p>Guardián del Sabor</p></div>
-        <div class="stat-box" style="--accent: #4ade80;"><h3>1,240</h3><p>Puntos totales</p></div>
-        <div class="stat-box" style="--accent: #facc15;"><h3>145</h3><p>Semillas</p></div>
-        <div class="stat-box" style="--accent: #fb923c;"><h3>18</h3><p>Retos completados</p></div>
+        <div class="stat-box" style="--accent:var(--purple);">
+            <h3>Niv. <?php echo $nivel; ?></h3>
+            <p><?php echo $titulo; ?></p>
+        </div>
+        <div class="stat-box" style="--accent:var(--green);">
+            <h3><?php echo number_format($xp); ?></h3>
+            <p>Puntos totales</p>
+        </div>
+        <div class="stat-box" style="--accent:var(--yellow);">
+            <h3><?php echo $semillas; ?></h3>
+            <p>Semillas</p>
+        </div>
+        <div class="stat-box" style="--accent:var(--orange);">
+            <h3><?php echo $retos_completados_count; ?></h3>
+            <p>Retos completados</p>
+        </div>
     </div>
 
-    <div class="two-col" style="margin-bottom: 24px;">
+    <div class="two-col">
+        <!-- Progreso -->
         <div class="card">
             <div class="card-title">📈 Tu progreso</div>
-            <div class="progress-wrap" style="margin-bottom: 18px;">
-                <div class="progress-label"><span>Nivel 12</span><span>Nivel 13</span></div>
-                <div class="progress-bar"><div class="progress-fill" style="width: 65%; --fill-color: #a78bfa;"></div></div>
-                <div style="font-size: 11px; color: #6b7280; margin-top: 5px;">650 / 1000 XP</div>
-            </div>
-            <div class="progress-wrap" style="margin-bottom: 18px;">
-                <div class="progress-label"><span>Semillas recolectadas</span><span>145 / 200</span></div>
-                <div class="progress-bar"><div class="progress-fill" style="width: 72%; --fill-color: #4ade80;"></div></div>
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span>Nivel <?php echo $nivel; ?></span>
+                    <span>Nivel <?php echo $nivel + 1; ?></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:<?php echo $xp_pct; ?>%;--fill-color:var(--purple);"></div>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:5px;">
+                    <?php echo $xp_en_nivel; ?> / 1000 XP
+                </div>
             </div>
             <div class="progress-wrap">
-                <div class="progress-label"><span>Retos del mes</span><span>18 / 25</span></div>
-                <div class="progress-bar"><div class="progress-fill" style="width: 72%; --fill-color: #facc15;"></div></div>
+                <div class="progress-label">
+                    <span>Semillas recolectadas</span>
+                    <span><?php echo $semillas; ?> / 200</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:<?php echo min(100, round($semillas/2)); ?>%;--fill-color:var(--green);"></div>
+                </div>
+            </div>
+            <div class="progress-wrap" style="margin-bottom:0;">
+                <div class="progress-label">
+                    <span>Retos del mes</span>
+                    <span><?php echo $retos_completados_count; ?> completados</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:<?php echo min(100, $retos_completados_count * 4); ?>%;--fill-color:var(--yellow);"></div>
+                </div>
             </div>
         </div>
 
+        <!-- Ranking desde la BD -->
         <div class="card">
             <div class="card-title">🏆 Ranking global</div>
+            <?php if (count($ranking) > 0): ?>
             <div class="ranking-list">
-                <div class="ranking-item">
-                    <div class="rank-num rank-1">1</div>
-                    <div class="rank-name">EcoHéroe_Pasto</div>
-                    <div class="rank-pts">3,420 pts</div>
+                <?php foreach ($ranking as $r): ?>
+                <?php
+                    $pos = (int)$r['posicion'];
+                    $css = match($pos) { 1=>'rank-1', 2=>'rank-2', 3=>'rank-3', default=>'rank-other' };
+                    $es_yo = ($r['nombre'] === $fullname);
+                ?>
+                <div class="ranking-item" <?php if($es_yo): ?>style="border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.06);"<?php endif; ?>>
+                    <div class="rank-num <?php echo $css; ?>"><?php echo $pos; ?></div>
+                    <div class="rank-name" <?php if($es_yo): ?>style="color:var(--purple);"<?php endif; ?>>
+                        <?php echo htmlspecialchars($r['nombre']); ?>
+                        <?php if($es_yo): ?> <span style="font-size:11px;">(tú)</span><?php endif; ?>
+                    </div>
+                    <div class="rank-pts"><?php echo number_format((int)$r['xp']); ?> XP</div>
                 </div>
-                <div class="ranking-item">
-                    <div class="rank-num rank-2">2</div>
-                    <div class="rank-name">VerdeNariño</div>
-                    <div class="rank-pts">2,980 pts</div>
+                <?php endforeach; ?>
+                <?php if ($mi_posicion > 5): ?>
+                <div class="ranking-item" style="border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.06);">
+                    <div class="rank-num rank-other"><?php echo $mi_posicion; ?></div>
+                    <div class="rank-name" style="color:var(--purple);"><?php echo htmlspecialchars($fullname); ?> (tú)</div>
+                    <div class="rank-pts"><?php echo number_format($xp); ?> XP</div>
                 </div>
-                <div class="ranking-item">
-                    <div class="rank-num rank-3">3</div>
-                    <div class="rank-name">PlantaPoder</div>
-                    <div class="rank-pts">2,750 pts</div>
-                </div>
-                <div class="ranking-item" style="border-color: rgba(167,139,250,0.25); background: rgba(167,139,250,0.06);">
-                    <div class="rank-num rank-other">8</div>
-                    <div class="rank-name" style="color: #a78bfa;"><?php echo htmlspecialchars($fullname); ?> (tú)</div>
-                    <div class="rank-pts">1,240 pts</div>
-                </div>
+                <?php endif; ?>
             </div>
+            <?php else: ?>
+                <p class="empty">Sé el primero en el ranking 🚀</p>
+            <?php endif; ?>
         </div>
     </div>
 
-    <div class="card" style="margin-bottom: 24px;">
+    <!-- Retos activos desde la BD -->
+    <div class="card">
         <div class="card-title">⚡ Retos activos</div>
+        <?php if (count($retos_activos) > 0): ?>
         <div class="retos-grid">
+            <?php foreach ($retos_activos as $rt): ?>
+            <?php
+                $meta = max(1, (float)$rt['meta_valor']);
+                $prog = min(100, round((float)$rt['progreso'] / $meta * 100));
+            ?>
             <div class="reto-card">
-                <span class="reto-icon">🥦</span>
-                <h4>Rescata 5 kg</h4>
-                <p>Participa en la recogida de alimentos esta semana.</p>
-                <div class="progress-bar" style="margin-bottom: 8px;"><div class="progress-fill" style="width: 60%; --fill-color: #a78bfa;"></div></div>
-                <span class="reto-pts">+150 XP · 3 / 5 kg</span>
+                <span class="reto-icon"><?php echo $rt['icono']; ?></span>
+                <h4><?php echo htmlspecialchars($rt['titulo']); ?></h4>
+                <p><?php echo htmlspecialchars($rt['descripcion']); ?></p>
+                <div class="progress-bar" style="margin-bottom:8px;">
+                    <div class="progress-fill" style="width:<?php echo $prog; ?>();--fill-color:var(--purple);"></div>
+                </div>
+                <span class="reto-pts">+<?php echo (int)$rt['xp_recompensa']; ?> XP · <?php echo (float)$rt['progreso']; ?> / <?php echo (float)$rt['meta_valor']; ?></span>
             </div>
-            <div class="reto-card">
-                <span class="reto-icon">📸</span>
-                <h4>Comparte tu misión</h4>
-                <p>Sube una foto de tu acción contra el desperdicio.</p>
-                <div class="progress-bar" style="margin-bottom: 8px;"><div class="progress-fill" style="width: 0%; --fill-color: #a78bfa;"></div></div>
-                <span class="reto-pts">+80 XP · Pendiente</span>
-            </div>
-            <div class="reto-card">
-                <span class="reto-icon">🎯</span>
-                <h4>Completa 3 minijuegos</h4>
-                <p>Juega y aprende sobre economía circular.</p>
-                <div class="progress-bar" style="margin-bottom: 8px;"><div class="progress-fill" style="width: 33%; --fill-color: #a78bfa;"></div></div>
-                <span class="reto-pts">+200 XP · 1 / 3</span>
-            </div>
+            <?php endforeach; ?>
         </div>
+        <?php else: ?>
+            <p class="empty">No tienes retos activos en este momento. ¡Explora nuevos retos! 🌟</p>
+        <?php endif; ?>
     </div>
 
     <div class="donate-banner">
