@@ -364,10 +364,6 @@ if ($role === 'jugador') {
         <h1>Bienvenido, <em><?php echo htmlspecialchars($fullname); ?></em></h1>
         <p>Gracias por reducir el desperdicio en Pasto 🌱</p>
     </div>
-    <div class="actions">
-        <button class="btn btn-ghost" onclick="toggleHelp()">❓ Cómo funciona</button>
-        <a href="register_donations.php" class="btn btn-orange">+ Registrar Donación</a>
-    </div>
 </div>
 
     <!-- Stats reales desde la BD -->
