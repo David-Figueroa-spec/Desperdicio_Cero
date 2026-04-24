@@ -24,7 +24,7 @@ $error_msg         = null;
 // ── Procesar solicitud ──────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_donacion'])) {
     $id          = (int)$_POST['id_donacion'];
-    $receptor_id = (int)$_SESSION['session_user_id'];
+   $receptor_id = $_SESSION['session_user_id'];
 
     try {
         $stmt = $pdo->prepare("

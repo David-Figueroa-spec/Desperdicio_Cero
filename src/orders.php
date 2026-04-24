@@ -8,7 +8,7 @@ if (!isset($_SESSION['session_user_id'])) {
 
 require('../config/database.php');
 
-$usuario_id = (int)$_SESSION['session_user_id'];
+$usuario_id = $_SESSION['session_user_id'];
 $confirmado = false;
 
 // ── Confirmar entrega ───────────────────────────────────────
