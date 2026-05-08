@@ -29,7 +29,6 @@
             color: white;
         }
 
-        /* Reutilización de la estética original */
         .orb {
             position: absolute;
             border-radius: 50%;
@@ -69,7 +68,7 @@
             z-index: 2;
             text-align: center;
             padding: 2rem;
-            max-width: 900px;
+            max-width: 1000px;
             width: 100%;
             animation: fadeUp 0.8s ease both;
         }
@@ -103,14 +102,15 @@
             margin-bottom: 2.5rem;
         }
 
-        /* Contenedor de Recursos */
         .resources-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
             margin-bottom: 3rem;
+            align-items: start;
         }
 
+        /* Estilo base de tarjetas */
         .resource-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(240, 253, 244, 0.1);
@@ -118,29 +118,29 @@
             padding: 30px;
             text-decoration: none;
             color: white;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
+            position: relative;
+            overflow: hidden;
         }
 
         .resource-card:hover {
             background: rgba(74, 222, 128, 0.05);
             border-color: rgba(74, 222, 128, 0.4);
             transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
         }
 
-        .resource-card i {
+        .resource-card i.main-icon {
             font-size: 2.5rem;
             margin-bottom: 10px;
         }
 
-        /* Colores específicos para iconos */
-        .fa-file-pdf { color: #fb923c; } /* Naranja */
-        .fa-youtube { color: #ff4444; }  /* Rojo Youtube */
-        .fa-bolt { color: #4ade80; }     /* Verde */
+        .fa-file-pdf { color: #fb923c; }
+        .fa-youtube { color: #ff4444; }
+        .fa-bolt { color: #4ade80; }
 
         .resource-card h3 {
             font-family: 'DM Serif Display', serif;
@@ -154,7 +154,58 @@
             line-height: 1.4;
         }
 
-        /* Botón Volver */
+        /* Lógica del Desplegable */
+        .dropdown-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, opacity 0.4s ease;
+            width: 100%;
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .resource-card.active-dropdown {
+            background: rgba(74, 222, 128, 0.08);
+            border-color: rgba(74, 222, 128, 0.6);
+        }
+
+        .resource-card:hover .dropdown-content {
+            max-height: 300px;
+            opacity: 1;
+            margin-top: 20px;
+        }
+
+        /* Links internos del desplegable */
+        .sub-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px 18px;
+            border-radius: 14px;
+            text-decoration: none;
+            color: #d1fae5;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .sub-link:hover {
+            background: rgba(74, 222, 128, 0.15);
+            border-color: rgba(74, 222, 128, 0.3);
+            transform: translateX(5px);
+            color: white;
+        }
+
+        .sub-link i {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
         .btn-back {
             display: inline-flex;
             align-items: center;
@@ -185,26 +236,41 @@
         <h1>Documentación y Ayuda</h1>
 
         <div class="resources-grid">
+            <!-- Manual PDF -->
             <a href="https://drive.google.com/file/d/1ShgbMV8NdSVUROm2_Kxl-BIy_MZnnk7c/view?usp=sharing" target="_blank" class="resource-card">
-                <i class="fas fa-file-pdf"></i>
+                <i class="fas fa-file-pdf main-icon"></i>
                 <h3>Manual PDF</h3>
                 <p>Consulta el manual detallado directamente en Google Docs.</p>
             </a>
 
+            <!-- Video Tutorial -->
             <a href="https://www.youtube.com/watch?v=78XwtOaMZrE" target="_blank" class="resource-card">
-                <i class="fab fa-youtube"></i>
+                <i class="fab fa-youtube main-icon"></i>
                 <h3>Video Tutorial</h3>
                 <p>Aprende de forma visual cómo funciona la plataforma.</p>
             </a>
 
-            <a href="https://drive.google.com/drive/folders/1r2EQ_cfHkBXOCyw6Ln04CtwPBcvMGscm?usp=sharing" class="resource-card">
-                <i class="fas fa-bolt"></i>
+            <!-- Guía Rápida Desplegable -->
+            <div class="resource-card">
+                <i class="fas fa-bolt main-icon"></i>
                 <h3>Guía Rápida</h3>
-                <p>Pasos clave para empezar a actuar hoy mismo.</p>
-            </a>
+                <p>Selecciona tu tipo de perfil para ver la guía de acceso.</p>
+                
+                <div class="dropdown-content">
+                    <a href="https://drive.google.com/file/d/1_AwCobN4taa5VxWhmciwIXeCsVsrISQc/view?usp=sharing" target="_blank" class="sub-link">
+                        Donador <i class="fas fa-chevron-right"></i>
+                    </a>
+                    <a href="https://drive.google.com/file/d/1FBwGNflZsLxvWog0W3i7vYaKOtKTZMO-/view?usp=sharing" target="_blank" class="sub-link">
+                        Empresa <i class="fas fa-chevron-right"></i>
+                    </a>
+                    <a href="https://drive.google.com/file/d/1jmhvEWMi_jJM9i3AB3Alu6gdNKr50j_-/view?usp=sharing" target="_blank" class="sub-link">
+                        Jugador <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <a href="index.html" class="btn-back">
+        <a href="../index.html" class="btn-back">
             <i class="fas fa-arrow-left"></i> Volver al inicio
         </a>
     </div>
