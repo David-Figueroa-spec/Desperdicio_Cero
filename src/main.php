@@ -485,7 +485,7 @@ if ($role === 'jugador') {
             <p>Nivel <?php echo $nivel; ?> · <?php echo $titulo; ?> 🎮</p>
         </div>
         <div class="actions">
-            <button class="btn btn-purple">🎮 Minijuegos</button>
+            <a href="tetris.php" class="btn btn-purple" style="text-decoration:none;">🎮 Minijuegos</a>
             <button class="btn btn-ghost">Ver todos los retos</button>
         </div>
     </div>
