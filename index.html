@@ -198,6 +198,17 @@
             transform: translateY(-1px);
             box-shadow: 0 8px 24px rgba(251,146,60,0.35);
         }
+        .btn-support {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(74, 222, 128, 0.3); /* Borde punteado para estilo 'manual' */
+            color: #86efac;
+        }
+
+        .btn-support:hover {
+            background: rgba(74, 222, 128, 0.1);
+            border-color: #4ade80;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -230,9 +241,12 @@
         <p class="subtitle">Reduce el desperdicio. Actúa con propósito.</p>
 
         <!-- Botones -->
+        <!-- Botones -->
         <div class="button-container">
             <a href="src/signin.html" class="btn btn-signin">Iniciar sesión</a>
             <a href="src/signup.html" class="btn btn-signup">Registrarse</a>
+            <!-- Nuevo botón de Soporte -->
+            <a href="src/manual_user.php" class="btn btn-support">Soporte</a>
         </div>
 
     </div>
