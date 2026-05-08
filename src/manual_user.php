@@ -185,7 +185,7 @@
         <h1>Documentación y Ayuda</h1>
 
         <div class="resources-grid">
-            <a href="https://docs.google.com/document/d/1iyvMugP4oPCAzNZqP7I1I4u9fchGP-UR/edit" target="_blank" class="resource-card">
+            <a href="https://drive.google.com/file/d/1ShgbMV8NdSVUROm2_Kxl-BIy_MZnnk7c/view?usp=sharing" target="_blank" class="resource-card">
                 <i class="fas fa-file-pdf"></i>
                 <h3>Manual PDF</h3>
                 <p>Consulta el manual detallado directamente en Google Docs.</p>
