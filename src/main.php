@@ -356,6 +356,7 @@ if ($role === 'jugador') {
         </div>
         <div class="actions">
             <button class="btn btn-ghost" onclick="toggleHelp()">❓ Cómo funciona</button>
+            <a href="edit_user_form.php" class="btn btn-ghost" style="text-decoration:none;">👤 Mi Perfil</a>
             <a href="register_donations.php" class="btn btn-orange">+ Registrar Donación</a>
         </div>
     </div>
@@ -371,6 +372,10 @@ if ($role === 'jugador') {
         <div class="stat-box" style="--accent:var(--green);">
             <h3><?php echo number_format((float)$st['total_kg'], 0); ?> kg</h3>
             <p>Alimentos donados</p>
+        </div>
+        <div class="stat-box" style="--accent:#22d3ee;">
+            <h3><?php echo number_format((float)$st['total_kg'] * 2.5, 1); ?> kg</h3>
+            <p>CO₂ evitado est.</p>
         </div>
         <div class="stat-box" style="--accent:var(--yellow);">
             <h3><?php echo (int)$st['activas']; ?></h3>
@@ -452,6 +457,7 @@ if ($role === 'jugador') {
     <div class="nav-buttons">
         <a href="donations.php" class="btn btn-green">🟢 Alimentos disponibles</a>
         <a href="orders.php"    class="btn btn-ghost">📦 Mis pedidos</a>
+        <a href="edit_user_form.php" class="btn btn-ghost">👤 Mi Perfil</a>
     </div>
 
     <!-- Preview de donaciones disponibles -->
@@ -486,7 +492,7 @@ if ($role === 'jugador') {
         </div>
         <div class="actions">
             <a href="tetris.php" class="btn btn-purple" style="text-decoration:none;">🎮 Minijuegos</a>
-            <button class="btn btn-ghost">Ver todos los retos</button>
+            <a href="edit_user_form.php" class="btn btn-ghost" style="text-decoration:none;">👤 Mi Perfil</a>
         </div>
     </div>
 
@@ -595,7 +601,7 @@ if ($role === 'jugador') {
                 <h4><?php echo htmlspecialchars($rt['titulo']); ?></h4>
                 <p><?php echo htmlspecialchars($rt['descripcion']); ?></p>
                 <div class="progress-bar" style="margin-bottom:8px;">
-                    <div class="progress-fill" style="width:<?php echo $prog; ?>();--fill-color:var(--purple);"></div>
+                    <div class="progress-fill" style="width:<?php echo $prog; ?>%;--fill-color:var(--purple);"></div>
                 </div>
                 <span class="reto-pts">+<?php echo (int)$rt['xp_recompensa']; ?> XP · <?php echo (float)$rt['progreso']; ?> / <?php echo (float)$rt['meta_valor']; ?></span>
             </div>
@@ -611,7 +617,7 @@ if ($role === 'jugador') {
             <p><strong>¿Quieres ir un paso más allá?</strong><br>
             Aunque eres jugador, puedes hacer una donación directa y ganar <strong>+500 XP</strong> extra.</p>
         </div>
-        <button class="btn btn-orange">Donar ahora</button>
+        <a href="register_donations.php" class="btn btn-orange" style="text-decoration:none;">Donar ahora</a>
     </div>
 
 <?php endif; ?>

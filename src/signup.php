@@ -13,17 +13,37 @@ require('../config/database.php');
 $rol            = $_POST['user_role'] ?? 'jugador';
 $e_mail         = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
 $p_wd           = $_POST['passwd'] ?? '';
+$p_wd2          = $_POST['passwd2'] ?? '';
 
 // Campos opcionales según el formulario
 $nombre_entidad = $_POST['empresa'] ?? $_POST['org'] ?? null;
-$f_name         = $_POST['fname'] ?? null; 
+$f_name         = $_POST['fname'] ?? null;
 $m_number       = $_POST['mnumber'] ?? null;
 $tipo_inst      = $_POST['tipo'] ?? null;
 $u_name         = $_POST['username'] ?? null;
+$direccion      = $_POST['direccion'] ?? null;
 
 // Validar que el email y la contraseña no estén vacíos
 if(empty($e_mail) || empty($p_wd)) {
     echo "<script>alert('Email y contraseña son obligatorios'); window.location.href='signup.html';</script>";
+    exit();
+}
+
+// Validar confirmación de contraseña
+if (!empty($p_wd2) && $p_wd !== $p_wd2) {
+    echo "<script>alert('La contraseña no coincide. Por favor verifícala.'); window.location.href='signup.html';</script>";
+    exit();
+}
+
+// Validar que nombre de contacto solo tenga letras y espacios
+if (!empty($f_name) && preg_match('/[^A-Za-záéíóúÁÉÍÓÚñÑüÜ ]/u', $f_name)) {
+    echo "<script>alert('El nombre de contacto no puede contener números ni caracteres especiales.'); window.location.href='signup.html';</script>";
+    exit();
+}
+
+// Validar que teléfono solo tenga números
+if (!empty($m_number) && !preg_match('/^[0-9]{7,15}$/', $m_number)) {
+    echo "<script>alert('El teléfono solo debe contener números (7-15 dígitos).'); window.location.href='signup.html';</script>";
     exit();
 }
 
@@ -46,8 +66,9 @@ if($res_check && pg_num_rows($res_check) > 0){
         nombre_contacto, 
         telefono, 
         tipo_institucion, 
-        username
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+        username,
+        direccion
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
 
     $params = array(
         $rol, 
@@ -57,7 +78,8 @@ if($res_check && pg_num_rows($res_check) > 0){
         $f_name, 
         $m_number, 
         $tipo_inst, 
-        $u_name
+        $u_name,
+        $direccion
     );
     
     $res = pg_query_params($conn_supa, $query, $params);

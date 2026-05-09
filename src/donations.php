@@ -53,7 +53,16 @@ try {
         WHERE LOWER(d.estado) = 'disponible'
         ORDER BY d.fecha_vencimiento ASC
     ");
-    $donaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $donaciones_all = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Category filter
+    $filtro_cat = trim($_GET['categoria'] ?? '');
+    $donaciones = $filtro_cat
+        ? array_filter($donaciones_all, fn($d) => strtolower($d['categoria']) === strtolower($filtro_cat))
+        : $donaciones_all;
+    $donaciones = array_values($donaciones);
+    // Collect unique categories for the filter bar
+    $cats = array_unique(array_column($donaciones_all, 'categoria'));
+    sort($cats);
 } catch (PDOException $e) {
     $donaciones = [];
 }
@@ -138,6 +147,11 @@ function urgenciaColor(int $dias): string {
         .btn-solicitar:hover { background:#22c55e;transform:translateY(-1px);box-shadow:0 8px 24px rgba(74,222,128,.3); }
 
         .empty { text-align:center;color:var(--muted);padding:64px 20px;grid-column:1/-1; }
+        .filter-chip { padding:5px 14px;border-radius:100px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase; border:1px solid rgba(74,222,128,.2);background:transparent;color:var(--muted);text-decoration:none;transition:all .2s; }
+        .filter-chip:hover,.filter-chip.active { background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.4);color:var(--green); }
+        .filter-chip { padding:5px 14px;border-radius:100px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+            border:1px solid rgba(74,222,128,.2);background:transparent;color:var(--muted);text-decoration:none;transition:all .2s; }
+        .filter-chip:hover,.filter-chip.active { background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.4);color:var(--green); }
         .empty p { font-size:14px;margin-top:8px; }
 
         /* ── Modal ── */
@@ -183,11 +197,27 @@ function urgenciaColor(int $dias): string {
     <h1 class="page-title">🍎 Alimentos Disponibles</h1>
     <p class="page-sub"><?php echo count($donaciones); ?> donación<?php echo count($donaciones) !== 1 ? 'es' : ''; ?> esperando un receptor</p>
 
+    <!-- Filtro por categoría -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;align-items:center;">
+        <span style="font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;">Filtrar:</span>
+        <a href="donations.php" class="filter-chip <?php echo $filtro_cat===''?'active':''; ?>">Todos</a>
+        <?php foreach($cats as $cat): ?>
+        <a href="donations.php?categoria=<?php echo urlencode($cat); ?>" class="filter-chip <?php echo strtolower($filtro_cat)===strtolower($cat)?'active':''; ?>"><?php echo htmlspecialchars($cat); ?></a>
+        <?php endforeach; ?>
+    </div>
+
     <?php if ($error_msg): ?>
         <div class="msg-error">❌ <?php echo htmlspecialchars($error_msg); ?></div>
     <?php endif; ?>
 
     <div class="grid">
+        <?php if (count($donaciones) === 0 && $filtro_cat !== ''): ?>
+        <div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 20px;">
+            <div style="font-size:2rem">🔍</div>
+            <p style="font-size:15px;color:var(--muted);margin-top:8px;">No hay alimentos disponibles con los filtros seleccionados.</p>
+            <a href="donations.php" style="color:var(--green);font-size:13px;margin-top:8px;display:inline-block;">Quitar filtro</a>
+        </div>
+        <?php endif; ?>
         <?php if (count($donaciones) > 0): ?>
             <?php foreach ($donaciones as $item): ?>
             <?php

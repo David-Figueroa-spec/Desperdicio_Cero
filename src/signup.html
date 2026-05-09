@@ -83,6 +83,12 @@
 
         #fields-container.role-jugador label { color: #facc15; }
         #fields-container.role-jugador .input-wrapper:focus-within { border-color: #facc15; }
+        .field-error { color: #f87171; font-size: 11px; margin-top: 3px; display: block; min-height: 14px; }
+        input:invalid:not(:placeholder-shown) { border-color: #f87171 !important; }
+        input:valid:not(:placeholder-shown) { border-color: #4ade80 !important; }
+        .field-error { color: #f87171; font-size: 11px; margin-top: 3px; display: block; min-height: 14px; }
+        input:invalid:not(:placeholder-shown) { border-color: #f87171 !important; }
+        input:valid:not(:placeholder-shown) { border-color: #4ade80 !important; }
 
         /* Elementos del Formulario */
         .form-group { text-align: left; margin-bottom: 18px; }
@@ -177,15 +183,33 @@
         donador: `
             <div class="form-group"><label>Nombre de la empresa</label><div class="input-wrapper"><span class="input-icon">🏢</span><input type="text" name="empresa" placeholder="Ej: Supermercado Pasto" required></div></div>
             <div class="form-group"><label>Correo electrónico</label><div class="input-wrapper"><span class="input-icon">✉️</span><input type="email" name="email" placeholder="empresa@correo.com" required></div></div>
-            <div class="form-group"><label>Nombre del responsable</label><div class="input-wrapper"><span class="input-icon">👤</span><input type="text" name="fname" placeholder="Nombre completo" required></div></div>
-            <div class="form-group"><label>Teléfono</label><div class="input-wrapper"><span class="input-icon">📞</span><input type="text" name="mnumber" placeholder="300 000 0000" required></div></div>
+            <div class="form-group">
+                <label>Nombre del responsable</label>
+                <div class="input-wrapper"><span class="input-icon">👤</span><input type="text" id="fname_d" name="fname" placeholder="Solo letras" required pattern="[A-Za-záéíóúÁÉÍÓÚñÑüÜ ]{2,}" title="Solo se permiten letras y espacios"></div>
+                <small class="field-error" id="err_fname_d"></small>
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <div class="input-wrapper"><span class="input-icon">📞</span><input type="tel" id="tel_d" name="mnumber" placeholder="3001234567" required pattern="[0-9]{7,15}" title="Solo números (7-15 dígitos)"></div>
+                <small class="field-error" id="err_tel_d"></small>
+            </div>
+            <div class="form-group"><label>Dirección</label><div class="input-wrapper"><span class="input-icon">📍</span><input type="text" name="direccion" placeholder="Calle 14 #56-23, Pasto" required></div></div>
         `,
         receptor: `
             <div class="form-group"><label>Nombre de la organización</label><div class="input-wrapper"><span class="input-icon">❤️</span><input type="text" name="org" placeholder="Ej: Fundación Sol" required></div></div>
             <div class="form-group"><label>Correo electrónico</label><div class="input-wrapper"><span class="input-icon">✉️</span><input type="email" name="email" placeholder="organizacion@correo.com" required></div></div>
             <div class="form-group"><label>Tipo de institución</label><div class="input-wrapper"><select name="tipo"><option value="comedor">Comedor Social</option><option value="ong">ONG / Fundación</option></select></div></div>
-            <div class="form-group"><label>Persona de contacto</label><div class="input-wrapper"><span class="input-icon">👤</span><input type="text" name="fname" placeholder="Nombre completo" required></div></div>
-            <div class="form-group"><label>Teléfono</label><div class="input-wrapper"><span class="input-icon">📞</span><input type="text" name="mnumber" placeholder="300 000 0000" required></div></div>
+            <div class="form-group">
+                <label>Persona de contacto</label>
+                <div class="input-wrapper"><span class="input-icon">👤</span><input type="text" id="fname_r" name="fname" placeholder="Solo letras" required pattern="[A-Za-záéíóúÁÉÍÓÚñÑüÜ ]{2,}" title="Solo se permiten letras y espacios"></div>
+                <small class="field-error" id="err_fname_r"></small>
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <div class="input-wrapper"><span class="input-icon">📞</span><input type="tel" id="tel_r" name="mnumber" placeholder="3001234567" required pattern="[0-9]{7,15}" title="Solo números (7-15 dígitos)"></div>
+                <small class="field-error" id="err_tel_r"></small>
+            </div>
+            <div class="form-group"><label>Dirección</label><div class="input-wrapper"><span class="input-icon">📍</span><input type="text" name="direccion" placeholder="Calle 14 #56-23, Pasto" required></div></div>
         `,
         jugador: `
             <div class="form-group"><label>Nombre de usuario</label><div class="input-wrapper"><span class="input-icon">👤</span><input type="text" name="username" placeholder="Tu apodo en el juego" required></div></div>
@@ -194,15 +218,69 @@
     };
 
     function setFields(role) {
-        // Actualizar contenido y clase del contenedor
         container.innerHTML = templates[role] + `
-            <div class="form-group"><label>Contraseña</label><div class="input-wrapper"><span class="input-icon">🔒</span><input type="password" name="passwd" placeholder="••••••••" required></div></div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <div class="input-wrapper"><span class="input-icon">🔒</span><input type="password" id="passwd" name="passwd" placeholder="••••••••" required></div>
+            </div>
+            <div class="form-group">
+                <label>Confirmar contraseña</label>
+                <div class="input-wrapper"><span class="input-icon">🔒</span><input type="password" id="passwd2" name="passwd2" placeholder="••••••••" required></div>
+                <small class="field-error" id="err_passwd"></small>
+            </div>
         `;
-        container.className = `role-${role}`; 
-        
-        // Actualizar input oculto y estilo del botón
+        container.className = `role-${role}`;
         roleInput.value = role;
         btn.className = `btn-main btn-${role}`;
+        attachLiveValidation();
+    }
+
+    function attachLiveValidation() {
+        // Teléfono: bloquear todo lo que no sea número
+        document.querySelectorAll('input[name="mnumber"]').forEach(el => {
+            el.addEventListener('input', function() {
+                const clean = this.value.replace(/\D/g, '');
+                if (this.value !== clean) {
+                    this.value = clean;
+                    const errId = this.id === 'tel_d' ? 'err_tel_d' : 'err_tel_r';
+                    const errEl = document.getElementById(errId);
+                    if (errEl) { errEl.textContent = 'Solo se permiten números.'; setTimeout(()=>errEl.textContent='',1800); }
+                }
+            });
+        });
+        // Nombre contacto: bloquear números y especiales
+        document.querySelectorAll('input#fname_d, input#fname_r').forEach(el => {
+            el.addEventListener('input', function() {
+                const clean = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚñÑüÜ ]/g, '');
+                if (this.value !== clean) {
+                    this.value = clean;
+                    const errId = this.id === 'fname_d' ? 'err_fname_d' : 'err_fname_r';
+                    const errEl = document.getElementById(errId);
+                    if (errEl) { errEl.textContent = 'No se permiten números ni caracteres especiales.'; setTimeout(()=>errEl.textContent='',1800); }
+                }
+            });
+        });
+        // Confirmar contraseña
+        const p2 = document.getElementById('passwd2');
+        if (p2) {
+            p2.addEventListener('input', checkPasswords);
+            const p1 = document.getElementById('passwd');
+            if (p1) p1.addEventListener('input', checkPasswords);
+        }
+    }
+
+    function checkPasswords() {
+        const p1 = document.getElementById('passwd');
+        const p2 = document.getElementById('passwd2');
+        const err = document.getElementById('err_passwd');
+        if (!p1||!p2||!err) return;
+        if (p2.value && p1.value !== p2.value) {
+            err.textContent = 'La contraseña no coincide.';
+            p2.setCustomValidity('La contraseña no coincide.');
+        } else {
+            err.textContent = '';
+            p2.setCustomValidity('');
+        }
     }
 
     roles.forEach(item => {

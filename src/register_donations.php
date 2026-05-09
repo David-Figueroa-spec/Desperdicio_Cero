@@ -16,11 +16,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     $producto     = trim($_POST['producto']);
-    $cantidad     = intval($_POST['cantidad']);
+    $cantidad     = floatval($_POST['cantidad']);
+    if ($cantidad <= 0) {
+        echo "<script>alert('La cantidad debe ser mayor a 0.'); window.history.back();</script>";
+        exit();
+    }
     $descripcion  = trim($_POST['descripcion'] ?? '');
     $fecha_venc   = $_POST['fecha_vencimiento'];
     $categoria    = $_POST['categoria'];
-    $usuario_id   = $_SESSION['session_user_id']; 
+    $conservacion = trim($_POST['conservacion'] ?? '');
+    $usuario_id   = $_SESSION['session_user_id'];
+    // Append conservacion to descripcion if provided
+    if (!empty($conservacion)) {
+        $descripcion = ($descripcion ? $descripcion . ' | ' : '') . 'Conservación: ' . $conservacion;
+    }
 
     $sql_insert = "INSERT INTO donaciones (
                     producto, cantidad, descripcion, fecha_vencimiento,
@@ -82,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <div class="form-group">
             <label for="cantidad">Cantidad (unidades/paquetes):</label>
-            <input type="number" id="cantidad" name="cantidad" min="1" required placeholder="1">
+            <input type="number" id="cantidad" name="cantidad" min="0.5" step="0.5" required placeholder="1">
         </div>
 
         <div class="form-group">
@@ -100,8 +109,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
 
         <div class="form-group">
+            <label for="conservacion">Condiciones de conservación:</label>
+            <select id="conservacion" name="conservacion">
+                <option value="">Sin condición especial</option>
+                <option value="Temperatura ambiente">Temperatura ambiente</option>
+                <option value="Refrigerado">Refrigerado (0–8°C)</option>
+                <option value="Congelado">Congelado (-18°C)</option>
+                <option value="Lugar seco">Lugar seco y fresco</option>
+                <option value="Frágil">Frágil / Manejo cuidadoso</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label for="fecha_vencimiento">Fecha de Vencimiento:</label>
             <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" required>
+            <small id="fecha-warn" style="color:#facc15;font-size:11px;display:none;">⚠️ La fecha de caducidad ya venció. Por favor verifique el estado del alimento antes de donar.</small>
         </div>
 
         <div class="form-group">
@@ -135,7 +157,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <script>
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('fecha_vencimiento').setAttribute('min', today);
+    // Warn if expiry date is in the past (don't block, just warn)
+    document.getElementById('fecha_vencimiento').addEventListener('change', function() {
+        const warn = document.getElementById('fecha-warn');
+        if (this.value && this.value < today) {
+            warn.style.display = 'block';
+        } else {
+            warn.style.display = 'none';
+        }
+    });
 
     const helpSteps = [
       { n:'1', color:'#fb923c', title:'Inicia sesión con tu cuenta de donador', desc:'Accede con tu correo y contraseña seleccionando el rol <strong style="color:#fb923c">Donador</strong>. Tu panel personalizado se cargará automáticamente con tus estadísticas.', tip:'Solo los usuarios con rol donador pueden registrar alimentos en la plataforma.' },
