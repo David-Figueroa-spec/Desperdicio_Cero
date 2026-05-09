@@ -481,8 +481,8 @@ if ($role === 'jugador') {
 ═══════════════════════════════════════════ -->
     <div class="welcome-bar" style="--role-color:var(--purple);">
         <div>
-            <h1>¡Hola, <em><?php echo htmlspecialchars($fullname); ?></em>!</h1>
-            <p>Nivel <?php echo $nivel; ?> · <?php echo $titulo; ?> 🎮</p>
+            <h1>¡Hola, <em><?php echo htmlspecialchars($nombre_display); ?></em>!</h1>
+            <p>Nivel <?php echo $nivel; ?> · <?php echo htmlspecialchars($titulo); ?> · 🌱 <?php echo $semillas; ?> semillas · <?php echo htmlspecialchars($email_display); ?> 🎮</p>
         </div>
         <div class="actions">
             <a href="tetris.php" class="btn btn-purple" style="text-decoration:none;">🎮 Minijuegos</a>
